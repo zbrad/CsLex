@@ -482,7 +482,7 @@ the newline.
 An optional lexical state list preceeds each rule. This list
 should be in the following form:
 
-*state0* **{** , *state1*, *state2*, *...* **}**
+< *state0* **{** , *state1*, <*state2*>, *...* **}** >
 
 The outer set of brackets ({}) indicate that multiple states are
 optional. The greater than (>) and less than (<) symbols
@@ -496,6 +496,10 @@ against those rules that have *A* in their state list.
 
 If no state list is specified for a given rule, the rule is
 matched against in all lexical states.
+
+An example of this combination of state and match appears as:
+
+	<YYINITIAL,COMMENT> [(\r\n?|\n)] { return null; }
 
 ### Regular Expressions
 
