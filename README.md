@@ -1,6 +1,6 @@
 # CsLex Project
 
-This project was first created in 1999, when C# and the .NET Framework were in their infancy.  I've resurrected the original code, fixed up some typos in the [CsLex Manual](http://github.com/zbrad/CsLex/CsLex.md "CsLex Manual"), released it on GitHub.
+This project was first created in 1999, when C# and the .NET Framework were in their infancy.  I've resurrected the original code, fixed up some typos in the [CsLex Manual](http://github.com/zbrad/CsLex/blob/master/CsLex.md "CsLex Manual"), released it on GitHub.
 
 
 ## Plans
