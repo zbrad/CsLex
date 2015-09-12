@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexLib", "LexLib\LexLib.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CsLexConsole", "CsLexConsole\CsLexConsole.csproj", "{5C546382-F671-4F11-A51C-9AB00B5D13D9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexTests", "LexTests\LexTests.csproj", "{5EED874F-55FB-4C3A-9442-02CB1871EA03}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestOutputSimple", "TestOutputSimple\TestOutputSimple.csproj", "{8E0AFE78-BE44-4B6D-BFC6-E7880F8E86D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{5C546382-F671-4F11-A51C-9AB00B5D13D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C546382-F671-4F11-A51C-9AB00B5D13D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C546382-F671-4F11-A51C-9AB00B5D13D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EED874F-55FB-4C3A-9442-02CB1871EA03}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EED874F-55FB-4C3A-9442-02CB1871EA03}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EED874F-55FB-4C3A-9442-02CB1871EA03}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EED874F-55FB-4C3A-9442-02CB1871EA03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E0AFE78-BE44-4B6D-BFC6-E7880F8E86D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E0AFE78-BE44-4B6D-BFC6-E7880F8E86D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E0AFE78-BE44-4B6D-BFC6-E7880F8E86D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E0AFE78-BE44-4B6D-BFC6-E7880F8E86D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

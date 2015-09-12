@@ -28,8 +28,7 @@ namespace LexLib
 				 conversion module. */
         private Minimize minimize;  /* Transition table compressor. */
                                     //private SimplifyNfa simplifyNfa; /* NFA simplifier using char classes */
-        private Emit emit;      /* Output module that emits source code
-				 into the generated lexer file. */
+        private Emit emit;      // Output module that emits source code into the generated lexer file. */
 
         private String usercode;    /* temporary to hold the user supplied code */
                                     /*
@@ -60,47 +59,15 @@ namespace LexLib
         public const int OR = 16;
         public const int PLUS_CLOSE = 17;
 
-        /*
-         * Function: LexGen
-         */
-        public Gen(String filename)
+        public Gen(StreamReader sr, StreamWriter sw)
         {
+            this.instream = sr;
+            this.outstream = sw;
+            init();
+        }
 
-            /* Successful initialization flag. */
-            init_flag = false;
-
-            /* Open input stream. */
-            instream = new StreamReader(
-                            new FileStream(filename, FileMode.Open,
-                                   FileAccess.Read, FileShare.Read,
-                                   Properties.Settings.Default.MaxBuf)
-                            );
-            if (instream == null)
-            {
-                Console.WriteLine("Error: Unable to open input file " + filename + ".");
-                return;
-            }
-            int j = filename.LastIndexOf('\\');
-            if (j < 0)
-                j = 0;
-            else
-                j++;
-            String outfile = filename.Substring(j, filename.Length - j).Replace('.', '_')
-              + ".cs";
-            Console.WriteLine("Creating output file [" + outfile + "]");
-            /* Open output stream. */
-            outstream = new StreamWriter(
-                         new FileStream(outfile,
-                            FileMode.Create,
-                            FileAccess.Write,
-                            FileShare.Write, 8192)
-                         );
-            if (outstream == null)
-            {
-                Console.WriteLine("Error: Unable to open output file " + filename + ".java.");
-                return;
-            }
-
+        void init()
+        { 
             /* Create input buffer class. */
             ibuf = new Input(instream);
 
@@ -200,7 +167,7 @@ namespace LexLib
   details();
 #endif
 
-            outstream.Close();
+            // outstream.Close();
         }
 
         /*
@@ -840,11 +807,7 @@ namespace LexLib
 #if DEBUG
                     Utility.assert(null != a);
 #endif
-                    object o = a[j];
-#if DEBUG
-                    Utility.assert(null != o);
-#endif
-                    nfa = (Nfa)o;
+                    nfa = a[j];
                     Console.Write(spec.nfa_states.IndexOf(nfa) + " ");
                 }
 
@@ -973,14 +936,14 @@ namespace LexLib
 
                     /* Save name after checking definition. */
                     name = new String(ibuf.line, start_state, count_state);
-                    Object o = spec.states[name];
-                    if (o == null)
-                    {
+
+                    if (!spec.states.TryGetValue(name, out index))
+                    { 
                         /* Uninitialized state. */
                         Console.WriteLine("Uninitialized State Name: [" + name + "]");
                         Error.parse_error(Error.E_STATE, ibuf.line_number);
                     }
-                    index = (int)o;
+
                     states.Set(index, true);
                 }
             }
@@ -1787,14 +1750,14 @@ namespace LexLib
             }
             else
             {
-                Object code = tokens[spec.lexeme];
-                if (code == null)
+                int code;
+                if (tokens.TryGetValue(spec.lexeme, out code))
                 {
-                    spec.current_token = L;
+                    spec.current_token = code;
                 }
                 else
                 {
-                    spec.current_token = (int)code;
+                    spec.current_token = L;
                 }
             }
 

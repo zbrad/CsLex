@@ -197,11 +197,8 @@ namespace LexLib
   bunch.dump();
 #endif
 
-            Object o = s.dfa_sets[bunch.GetNFABit()];
-
-            if (null != o)
-            {
-                dfa = (Dfa)o;
+            if (s.dfa_sets.TryGetValue(bunch.GetNFABit(), out dfa))
+            { 
 #if OLD_DUMP_DEBUG
     Console.WriteLine(" FOUND!");
 #endif

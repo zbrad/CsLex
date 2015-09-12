@@ -135,10 +135,7 @@ namespace LexLib
              */
             while (nfa_stack.Count > 0)
             {
-                Object o = nfa_stack.Pop();
-                if (o == null)
-                    break;
-                state = (Nfa)o;
+                state = nfa_stack.Pop();
 
 #if OLD_DUMP_DEBUG
     if (null != state.GetAccept())

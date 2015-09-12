@@ -1,10 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace LexLib
 {
-    public sealed class BitSet : System.IComparable
+    public sealed class BitSet : IComparable<BitSet>
     {
         /*
          * Sorted array of bit-block offsets.
@@ -272,9 +271,8 @@ namespace LexLib
         {
             if (obj == null)
                 return false;
-            if (!(obj is BitSet))
-                return false;
-            return Equals(this, (BitSet)obj);
+
+            return Equals(this, obj as BitSet);
         }
 
         /*
@@ -283,6 +281,11 @@ namespace LexLib
          */
         public static bool Equals(BitSet a, BitSet b)
         {
+            if (a == null && b == null)
+                return true;
+            if (a == null || b == null)
+                return false;
+
             for (int i = 0, j = 0; i < a.inuse || j < b.inuse;)
             {
                 if (i < a.inuse && (j >= b.inuse || a.offs[i] < b.offs[j]))
@@ -308,32 +311,28 @@ namespace LexLib
          * Provides a compare function for a BitSort, for use with Sort or
          * binarysearch.
          */
-        public int CompareTo(object o)
+        public int CompareTo(BitSet other)
         {
-            if (!(o is BitSet))
-                throw new System.ApplicationException("Argument must be a BitSet");
-            BitSet a = (BitSet)o;
-
-            if (inuse < a.inuse)
+            if (inuse < other.inuse)
                 return -1;
-            if (inuse > a.inuse)
+            if (inuse > other.inuse)
                 return 1;
 
-            for (int i = 0, j = 0; i < inuse || j < a.inuse;)
+            for (int i = 0, j = 0; i < inuse || j < other.inuse;)
             {
-                if (i < inuse && (j >= a.inuse || offs[i] < a.offs[j]))
+                if (i < inuse && (j >= other.inuse || offs[i] < other.offs[j]))
                 {
                     if (bits[i++] != 0)
                         return -1;
                 }
-                else if (j < a.inuse && (i >= inuse || offs[i] > a.offs[j]))
+                else if (j < other.inuse && (i >= inuse || offs[i] > other.offs[j]))
                 {
-                    if (a.bits[j++] != 0)
+                    if (other.bits[j++] != 0)
                         return 1;
                 }
                 else
                 { // equal keys
-                    long val = ((long)a.bits[j++]) - ((long)bits[i++]);
+                    long val = ((long)other.bits[j++]) - ((long)bits[i++]);
                     if (val < 0)
                         return -1;
                     else if (val > 0)
@@ -378,13 +377,7 @@ namespace LexLib
                 }
             }
 
-            object IEnumerator.Current
-            {
-                get
-                {
-                    throw new NotImplementedException();
-                }
-            }
+            object System.Collections.IEnumerator.Current { get { return this.Current; } }
 
             private void advance()
             {
