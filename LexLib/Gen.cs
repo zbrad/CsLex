@@ -30,7 +30,6 @@ namespace LexLib
                                     //private SimplifyNfa simplifyNfa; /* NFA simplifier using char classes */
         private Emit emit;      // Output module that emits source code into the generated lexer file. */
 
-        private String usercode;    /* temporary to hold the user supplied code */
                                     /*
                                      * Constants
                                      */
@@ -126,6 +125,7 @@ namespace LexLib
             {
                 Console.WriteLine("Processing first section -- user code.");
             }
+
             userCode();
             if (ibuf.eof_reached)
             {
@@ -157,11 +157,8 @@ namespace LexLib
             {
                 Console.WriteLine("Outputting lexical analyzer code.");
             }
-            outstream.Write("namespace " + spec.namespace_name + "\n{\n");
-            outstream.Write(usercode);
-            outstream.Write("/* test */\n");
+
             emit.Write(spec, outstream);
-            outstream.Write("\n}\n");
 
 #if OLD_DUMP_DEBUG
   details();
@@ -208,7 +205,7 @@ namespace LexLib
                 && ibuf.line[0] == '%'
                 && ibuf.line[1] == '%')
                 {
-                    usercode = sb.ToString();
+                    spec.usercode = sb.ToString();
                     /* Discard remainder of line. */
                     ibuf.line_index = ibuf.line_read;
                     return;

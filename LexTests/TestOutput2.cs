@@ -1,7 +1,9 @@
-﻿namespace YyNameSpace
+﻿namespace YyNameSpace2
 {
     using System;
     using System.Text;
+    using System.IO;
+
     class Simple
     {
         public static void Main(String[] argv)
@@ -54,193 +56,206 @@
     }
     /* test */
 
-
     internal class Yylex
     {
-        private const int YY_BUFFER_SIZE = 512;
-        private const int YY_F = -1;
-        private const int YY_NO_STATE = -1;
-        private const int YY_NOT_ACCEPT = 0;
-        private const int YY_START = 1;
-        private const int YY_END = 2;
-        private const int YY_NO_ANCHOR = 4;
+
+        #region constants
+
+        const int YY_BUFFER_SIZE = 512;
+        const int YY_F = -1;
+        const int YY_NO_STATE = -1;
+        const int YY_NOT_ACCEPT = 0;
+        const int YY_START = 1;
+        const int YY_END = 2;
+        const int YY_NO_ANCHOR = 4;
+        const int YY_BOL = 128;
+        const int YY_EOF = 129;
+        #endregion
+
         delegate Yytoken AcceptMethod();
         AcceptMethod[] accept_dispatch;
-        private const int YY_BOL = 128;
-        private const int YY_EOF = 129;
-        private System.IO.TextReader yy_reader;
-        private int yy_buffer_index;
-        private int yy_buffer_read;
-        private int yy_buffer_start;
-        private int yy_buffer_end;
-        private char[] yy_buffer;
-        private int yychar;
-        private int yyline;
-        private bool yy_at_bol;
-        private int yy_lexical_state;
 
-        internal Yylex(System.IO.TextReader reader) : this()
+        #region private members
+        TextReader yy_reader;
+        int yy_buffer_index;
+        int yy_buffer_read;
+        int yy_buffer_start;
+        int yy_buffer_end;
+        char[] yy_buffer = new char[YY_BUFFER_SIZE];
+        int yychar;
+        int yyline;
+        bool yy_at_bol = true;
+        int yy_lexical_state = YYINITIAL;
+        #endregion
+
+        #region constructors
+
+        internal Yylex(TextReader reader) : this()
         {
-            if (null == reader)
-            {
-                throw new System.ApplicationException("Error: Bad input stream initializer.");
-            }
+            if (reader == null)
+                throw new ApplicationException("Error: Bad input stream initializer.");
             yy_reader = reader;
         }
 
-        internal Yylex(System.IO.FileStream instream) : this()
+        internal Yylex(FileStream instream) : this()
         {
-            if (null == instream)
-            {
-                throw new System.ApplicationException("Error: Bad input stream initializer.");
-            }
-            yy_reader = new System.IO.StreamReader(instream);
+            if (instream == null)
+                throw new ApplicationException("Error: Bad input stream initializer.");
+            yy_reader = new StreamReader(instream);
         }
 
-        private Yylex()
+        Yylex()
         {
-            yy_buffer = new char[YY_BUFFER_SIZE];
-            yy_buffer_read = 0;
-            yy_buffer_index = 0;
-            yy_buffer_start = 0;
-            yy_buffer_end = 0;
-            yychar = 0;
-            yyline = 0;
-            yy_at_bol = true;
-            yy_lexical_state = YYINITIAL;
-            accept_dispatch = new AcceptMethod[]
-             {
-  null,
-  null,
-  new AcceptMethod(this.Accept_2),
-  new AcceptMethod(this.Accept_3),
-  new AcceptMethod(this.Accept_4),
-  new AcceptMethod(this.Accept_5),
-  new AcceptMethod(this.Accept_6),
-  new AcceptMethod(this.Accept_7),
-  new AcceptMethod(this.Accept_8),
-  new AcceptMethod(this.Accept_9),
-  new AcceptMethod(this.Accept_10),
-  null,
-  new AcceptMethod(this.Accept_12),
-  new AcceptMethod(this.Accept_13),
-  null,
-  new AcceptMethod(this.Accept_15),
-  null,
-  new AcceptMethod(this.Accept_17),
-  null,
-  null,
-              };
+            actionInit();
+            userInit();
         }
+
+        #endregion
+
+        #region action init
+        void actionInit()
+        {
+
+            accept_dispatch = new AcceptMethod[]
+                {
+
+            null,
+
+            null,
+
+            new AcceptMethod(this.Accept_2),
+
+            new AcceptMethod(this.Accept_3),
+
+            new AcceptMethod(this.Accept_4),
+
+            new AcceptMethod(this.Accept_5),
+
+            new AcceptMethod(this.Accept_6),
+
+            new AcceptMethod(this.Accept_7),
+
+            new AcceptMethod(this.Accept_8),
+
+            new AcceptMethod(this.Accept_9),
+
+            new AcceptMethod(this.Accept_10),
+
+            null,
+
+            new AcceptMethod(this.Accept_12),
+
+            new AcceptMethod(this.Accept_13),
+
+            null,
+
+            new AcceptMethod(this.Accept_15),
+
+            null,
+
+            new AcceptMethod(this.Accept_17),
+
+            null,
+
+            null,
+
+                };
+        }
+        #endregion
+
+        #region user init
+        void userInit()
+        {
+            // no user init
+        }
+        #endregion
+
+        #region action methods
 
         Yytoken Accept_2()
-        { // begin accept action #2
-            { /* this is newline */
-                Console.WriteLine("Parsed Newline.");
-                return null;
-            }
-        } // end accept action #2
+        { /* this is newline */
+            Console.WriteLine("Parsed Newline.");
+            return null;
+        }
 
         Yytoken Accept_3()
-        { // begin accept action #3
-            { /* this is whitespace */
-                Console.WriteLine("Parsed Whitespace = [" + yytext() + "]");
-                return null;
-            }
-        } // end accept action #3
+        { /* this is whitespace */
+            Console.WriteLine("Parsed Whitespace = [" + yytext() + "]");
+            return null;
+        }
 
         Yytoken Accept_4()
-        { // begin accept action #4
-            { /* this is the '*' char */
-                return (new Yytoken(2, yytext(), yyline, yychar, yychar + 1));
-            }
-        } // end accept action #4
+        { /* this is the '*' char */
+            return (new Yytoken(2, yytext(), yyline, yychar, yychar + 1));
+        }
 
         Yytoken Accept_5()
-        { // begin accept action #5
-            { /* this is the '/' char */
-                return (new Yytoken(1, yytext(), yyline, yychar, yychar + 1));
-            }
-        } // end accept action #5
+        { /* this is the '/' char */
+            return (new Yytoken(1, yytext(), yyline, yychar, yychar + 1));
+        }
 
         Yytoken Accept_6()
-        { // begin accept action #6
-            {
-                Util.IllChar(yytext());
-                return null;
-            }
-        } // end accept action #6
+        {
+            Util.IllChar(yytext());
+            return null;
+        }
 
         Yytoken Accept_7()
-        { // begin accept action #7
-            { /* comment begin (initial) */
-                yybegin(COMMENT);
-                Console.WriteLine("Comment_Begin = [" + yytext() + "]");
-                return null;
-            }
-        } // end accept action #7
+        { /* comment begin (initial) */
+            yybegin(COMMENT);
+            Console.WriteLine("Comment_Begin = [" + yytext() + "]");
+            return null;
+        }
 
         Yytoken Accept_8()
-        { // begin accept action #8
-            {
-                Console.WriteLine("Comment_Text = [" + yytext() + "]");
-                /* comment text here */
-                return null;
-            }
-        } // end accept action #8
+        {
+            Console.WriteLine("Comment_Text = [" + yytext() + "]");
+            /* comment text here */
+            return null;
+        }
 
         Yytoken Accept_9()
-        { // begin accept action #9
-            {
-                /* comment end */
-                Console.WriteLine("Comment_End = [" + yytext() + "]");
-                yybegin(YYINITIAL);
-                return null;
-            }
-        } // end accept action #9
+        {
+            /* comment end */
+            Console.WriteLine("Comment_End = [" + yytext() + "]");
+            yybegin(YYINITIAL);
+            return null;
+        }
 
         Yytoken Accept_10()
-        { // begin accept action #10
-            {
-                /* comment begin (non-initial) */
-                return null;
-            }
-        } // end accept action #10
+        {
+            /* comment begin (non-initial) */
+            return null;
+        }
 
         Yytoken Accept_12()
-        { // begin accept action #12
-            { /* this is newline */
-                Console.WriteLine("Parsed Newline.");
-                return null;
-            }
-        } // end accept action #12
+        { /* this is newline */
+            Console.WriteLine("Parsed Newline.");
+            return null;
+        }
 
         Yytoken Accept_13()
-        { // begin accept action #13
-            {
-                Console.WriteLine("Comment_Text = [" + yytext() + "]");
-                /* comment text here */
-                return null;
-            }
-        } // end accept action #13
+        {
+            Console.WriteLine("Comment_Text = [" + yytext() + "]");
+            /* comment text here */
+            return null;
+        }
 
         Yytoken Accept_15()
-        { // begin accept action #15
-            {
-                Console.WriteLine("Comment_Text = [" + yytext() + "]");
-                /* comment text here */
-                return null;
-            }
-        } // end accept action #15
+        {
+            Console.WriteLine("Comment_Text = [" + yytext() + "]");
+            /* comment text here */
+            return null;
+        }
 
         Yytoken Accept_17()
-        { // begin accept action #17
-            {
-                Console.WriteLine("Comment_Text = [" + yytext() + "]");
-                /* comment text here */
-                return null;
-            }
-        } // end accept action #17
+        {
+            Console.WriteLine("Comment_Text = [" + yytext() + "]");
+            /* comment text here */
+            return null;
+        }
+
+        #endregion
 
         private const int YYINITIAL = 0;
         private const int COMMENT = 1;
@@ -248,6 +263,7 @@
           {   0,
   8
           };
+        #region helpers
         private void yybegin(int state)
         {
             yy_lexical_state = state;
@@ -382,71 +398,108 @@
                 throw new System.ApplicationException("Fatal Error.\n");
             }
         }
-        private static int[] yy_acpt = new int[]
-          {
-  /* 0 */   YY_NOT_ACCEPT,
-  /* 1 */   YY_NO_ANCHOR,
-  /* 2 */   YY_NO_ANCHOR,
-  /* 3 */   YY_NO_ANCHOR,
-  /* 4 */   YY_NO_ANCHOR,
-  /* 5 */   YY_NO_ANCHOR,
-  /* 6 */   YY_NO_ANCHOR,
-  /* 7 */   YY_NO_ANCHOR,
-  /* 8 */   YY_NO_ANCHOR,
-  /* 9 */   YY_NO_ANCHOR,
-  /* 10 */   YY_NO_ANCHOR,
-  /* 11 */   YY_NOT_ACCEPT,
-  /* 12 */   YY_NO_ANCHOR,
-  /* 13 */   YY_NO_ANCHOR,
-  /* 14 */   YY_NOT_ACCEPT,
-  /* 15 */   YY_NO_ANCHOR,
-  /* 16 */   YY_NOT_ACCEPT,
-  /* 17 */   YY_NO_ANCHOR,
-  /* 18 */   YY_NOT_ACCEPT,
-  /* 19 */   YY_NOT_ACCEPT
-          };
-        private static int[] yy_cmap = new int[]
-          {
-  6, 6, 6, 6, 6, 6, 6, 6,
-  3, 3, 2, 6, 6, 1, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  3, 6, 6, 6, 7, 6, 6, 6,
-  6, 6, 4, 6, 6, 6, 6, 5,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  6, 6, 6, 6, 6, 6, 6, 6,
-  0, 0
-          };
-        private static int[] yy_rmap = new int[]
-          {
-  0, 1, 2, 2, 1, 3, 1, 1,
-  4, 1, 1, 5, 1, 6, 7, 8,
-  9, 10, 11, 12
-          };
-        private static int[,] yy_nxt = new int[,]
-          {
-  { 1, 11, 2, 3, 4, 5, 6, 6 },
-  { -1, -1, -1, -1, -1, -1, -1, -1 },
-  { -1, -1, 3, 3, -1, -1, -1, -1 },
-  { -1, -1, -1, -1, 7, -1, -1, -1 },
-  { 1, 13, 13, 13, 14, 16, 13, -1 },
-  { -1, -1, 12, -1, -1, -1, -1, -1 },
-  { -1, 13, 13, 13, 18, 19, 13, -1 },
-  { -1, 13, 13, 13, 15, 9, 13, -1 },
-  { -1, 13, 13, 13, 15, 19, 13, -1 },
-  { -1, 13, 13, 13, 10, 17, 13, -1 },
-  { -1, 13, 13, 13, 18, 17, 13, -1 },
-  { -1, 13, 13, 13, 15, -1, 13, -1 },
-  { -1, 13, 13, 13, -1, 17, 13, -1 }
-          };
+        #endregion
+
+        #region tables
+
+        static int[] yy_acpt = new int[]
+        {
+    /* 0 */   YY_NOT_ACCEPT,
+    /* 1 */   YY_NO_ANCHOR,
+    /* 2 */   YY_NO_ANCHOR,
+    /* 3 */   YY_NO_ANCHOR,
+    /* 4 */   YY_NO_ANCHOR,
+    /* 5 */   YY_NO_ANCHOR,
+    /* 6 */   YY_NO_ANCHOR,
+    /* 7 */   YY_NO_ANCHOR,
+    /* 8 */   YY_NO_ANCHOR,
+    /* 9 */   YY_NO_ANCHOR,
+    /* 10 */   YY_NO_ANCHOR,
+    /* 11 */   YY_NOT_ACCEPT,
+    /* 12 */   YY_NO_ANCHOR,
+    /* 13 */   YY_NO_ANCHOR,
+    /* 14 */   YY_NOT_ACCEPT,
+    /* 15 */   YY_NO_ANCHOR,
+    /* 16 */   YY_NOT_ACCEPT,
+    /* 17 */   YY_NO_ANCHOR,
+    /* 18 */   YY_NOT_ACCEPT,
+    /* 19 */   YY_NOT_ACCEPT
+        };
+
+        static int[] yy_cmap = new int[]
+        {
+    /* 0-7 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 8-15 */ 3, 3, 2, 6, 6, 1, 6, 6, 
+    /* 16-23 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 24-31 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 32-39 */ 3, 6, 6, 6, 7, 6, 6, 6, 
+    /* 40-47 */ 6, 6, 4, 6, 6, 6, 6, 5, 
+    /* 48-55 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 56-63 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 64-71 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 72-79 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 80-87 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 88-95 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 96-103 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 104-111 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 112-119 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 120-127 */ 6, 6, 6, 6, 6, 6, 6, 6, 
+    /* 128-135 */ 0, 0
+        };
+
+        static int[] yy_rmap = new int[]
+        {
+    /* 0-7 */ 0, 1, 2, 2, 1, 3, 1, 1, 
+    /* 8-15 */ 4, 1, 1, 5, 1, 6, 7, 8, 
+    /* 16-23 */ 9, 10, 11, 12
+        };
+
+        static int[,] yy_nxt = new int[,]
+        {
+        {
+        /* 0-7 */ 1, 11, 2, 3, 4, 5, 6, 6
+        },
+        {
+        /* 0-7 */ -1, -1, -1, -1, -1, -1, -1, -1
+        },
+        {
+        /* 0-7 */ -1, -1, 3, 3, -1, -1, -1, -1
+        },
+        {
+        /* 0-7 */ -1, -1, -1, -1, 7, -1, -1, -1
+        },
+        {
+        /* 0-7 */ 1, 13, 13, 13, 14, 16, 13, -1
+        },
+        {
+        /* 0-7 */ -1, -1, 12, -1, -1, -1, -1, -1
+        },
+        {
+        /* 0-7 */ -1, 13, 13, 13, 18, 19, 13, -1
+        },
+        {
+        /* 0-7 */ -1, 13, 13, 13, 15, 9, 13, -1
+        },
+        {
+        /* 0-7 */ -1, 13, 13, 13, 15, 19, 13, -1
+        },
+        {
+        /* 0-7 */ -1, 13, 13, 13, 10, 17, 13, -1
+        },
+        {
+        /* 0-7 */ -1, 13, 13, 13, 18, 17, 13, -1
+        },
+        {
+        /* 0-7 */ -1, 13, 13, 13, 15, -1, 13, -1
+        },
+        {
+        /* 0-7 */ -1, 13, 13, 13, -1, 17, 13, -1
+        }
+        };
+
+        #endregion
+
+        #region driver
         public Yytoken yylex()
         {
             char yy_lookahead;
@@ -486,6 +539,7 @@
                 {
                     // EOF_Test()
                     return null;
+
                 }
 
                 if (YY_F != yy_next_state)
@@ -503,7 +557,7 @@
                 {
                     if (YY_NO_STATE == yy_last_accept_state)
                     {
-                        throw new System.ApplicationException("Lexical Error: Unmatched Input.");
+                        throw new ApplicationException("Lexical Error: Unmatched Input.");
                     }
                     else
                     {
@@ -512,6 +566,7 @@
                         {
                             yy_move_end();
                         }
+
                         yy_to_mark();
                         if (yy_last_accept_state < 0)
                         {
@@ -528,6 +583,7 @@
                                     return tmp;
                             }
                         }
+
                         yy_initial = true;
                         yy_state = yy_state_dtrans[yy_lexical_state];
                         yy_next_state = YY_NO_STATE;
@@ -542,6 +598,8 @@
                     }
                 }
             }
+            #endregion
+
         }
     }
 }

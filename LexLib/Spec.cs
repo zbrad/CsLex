@@ -83,11 +83,12 @@ namespace LexLib
         public String eof_value_code;
 
         /* Class, function, type names. */
-        public String class_name = "Yylex";
-        public String implements_name;
-        public String function_name = "yylex";
-        public String type_name = "Yytoken";
-        public String namespace_name = "YyNameSpace";
+        public string class_name = "Yylex";
+        public string implements_name;
+        public string function_name = "yylex";
+        public string type_name = "Yytoken";
+        public string namespace_name = "YyNameSpace";
+        public string usercode;   // the user supplied code
 
         /*
          * Constants

@@ -11,6 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LexTests", "LexTests\LexTes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestOutputSimple", "TestOutputSimple\TestOutputSimple.csproj", "{8E0AFE78-BE44-4B6D-BFC6-E7880F8E86D5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BCE6E738-02A4-4D34-9F45-86297A48891F}"
+	ProjectSection(SolutionItems) = preProject
+		CsLex.md = CsLex.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

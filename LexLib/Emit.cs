@@ -156,10 +156,12 @@ namespace LexLib
 
             Header();
             Construct();
+            States();
             Helpers();
             Driver();
             Footer();
 
+            outstream.Flush();
             reset();
         }
 
@@ -176,32 +178,29 @@ namespace LexLib
 #endif
 
             /* Constants */
-            outstream.Write(
-              "private const int YY_BUFFER_SIZE = 512;\n"
-              + "private const int YY_F = -1;\n"
-              + "private const int YY_NO_STATE = -1;\n"
-              + "private const int YY_NOT_ACCEPT = 0;\n"
-              + "private const int YY_START = 1;\n"
-              + "private const int YY_END = 2;\n"
-              + "private const int YY_NO_ANCHOR = 4;\n"
-              );
+            outstream.Write(@"
+#region constants
+    {0}
+    const int YY_BUFFER_SIZE = 512;
+    const int YY_F = -1;
+    const int YY_NO_STATE = -1;
+    const int YY_NOT_ACCEPT = 0;
+    const int YY_START = 1;
+    const int YY_END = 2;
+    const int YY_NO_ANCHOR = 4;
+    const int YY_BOL = {1};
+    const int YY_EOF = {2};
+#endregion
+",
+        (spec.integer_type || spec.yyeof) ? "public const int YYEOF = -1;" : "",
+        spec.BOL, spec.EOF);
 
             /* type declarations */
-            outstream.Write("delegate " + spec.type_name + " AcceptMethod();\n" +
-                    "AcceptMethod[] accept_dispatch;\n");
-
-            /*
-             * write beg and end line chars
-             */
-            outstream.Write("private const int YY_BOL = ");
-            outstream.Write(spec.BOL);
-            outstream.Write(";\n");
-            outstream.Write("private const int YY_EOF = ");
-            outstream.Write(spec.EOF);
-            outstream.Write(";\n");
-
-            if (spec.integer_type || true == spec.yyeof)
-                outstream.Write("public const int YYEOF = -1;\n");
+            outstream.WriteLine(@"
+    delegate {0} AcceptMethod();
+    AcceptMethod[] accept_dispatch;
+",
+                spec.type_name);
 
             /* User specified class code */
             if (null != spec.class_code)
@@ -211,80 +210,63 @@ namespace LexLib
 
             /* Member Variables */
             outstream.Write(
-              "private System.IO.TextReader yy_reader;\n"
-              + "private int yy_buffer_index;\n"
-              + "private int yy_buffer_read;\n"
-              + "private int yy_buffer_start;\n"
-              + "private int yy_buffer_end;\n"
-              + "private char[] yy_buffer;\n");
-
-            if (spec.count_chars)
-                outstream.Write("private int yychar;\n");
-
-            if (spec.count_lines)
-                outstream.Write("private int yyline;\n");
-
-            outstream.Write("private bool yy_at_bol;\n");
-            outstream.Write("private int yy_lexical_state;\n\n");
+                @"
+    #region private members
+    TextReader yy_reader;
+    int yy_buffer_index;
+    int yy_buffer_read;
+    int yy_buffer_start;
+    int yy_buffer_end;
+    char[] yy_buffer = new char[YY_BUFFER_SIZE];
+    int yychar;
+    int yyline;
+    bool yy_at_bol = true;
+    int yy_lexical_state = YYINITIAL;
+    #endregion
+");
 
             /* Function: first constructor (Reader) */
             string spec_access = "internal ";
             if (spec.lex_public)
                 spec_access = "public ";
-            outstream.Write(
-              spec_access + spec.class_name
-              + "(System.IO.TextReader reader) : this()\n"
-              + "  {\n"
-              + "  if (null == reader)\n"
-              + "    {\n"
-              + "    throw new System.ApplicationException(\"Error: Bad input stream initializer.\");\n"
-              + "    }\n"
-              + "  yy_reader = reader;\n"
-              + "  }\n\n");
 
+            outstream.Write(@"
+    #region constructors
 
-            /* Function: second constructor (InputStream) */
-            outstream.Write(
-              spec_access + spec.class_name
-              + "(System.IO.FileStream instream) : this()\n"
-              + "  {\n"
-              + "  if (null == instream)\n"
-              + "    {\n"
-              + "    throw new System.ApplicationException(\"Error: Bad input stream initializer.\");\n"
-              + "    }\n"
-              + "  yy_reader = new System.IO.StreamReader(instream);\n"
-              + "  }\n\n");
+    {0} {1}(TextReader reader) : this()
+    {{
+        if (reader == null)
+            throw new ApplicationException(""Error: Bad input stream initializer."");
+        yy_reader = reader;
+    }}
 
-            /* Function: third, private constructor - only for internal use */
-            outstream.Write(
-              "private " + spec.class_name + "()\n"
-              + "  {\n"
-              + "  yy_buffer = new char[YY_BUFFER_SIZE];\n"
-              + "  yy_buffer_read = 0;\n"
-              + "  yy_buffer_index = 0;\n"
-              + "  yy_buffer_start = 0;\n"
-              + "  yy_buffer_end = 0;\n");
-            if (spec.count_chars)
-                outstream.Write("  yychar = 0;\n");
+    {0} {1}(FileStream instream) : this()
+    {{
+        if (instream == null)
+            throw new ApplicationException(""Error: Bad input stream initializer."");
+        yy_reader = new StreamReader(instream);
+    }}
 
-            if (spec.count_lines)
-                outstream.Write("  yyline = 0;\n");
+    {1}()
+    {{
+        actionInit();
+        userInit();
+    }}
 
-            outstream.Write("  yy_at_bol = true;\n");
-            outstream.Write("  yy_lexical_state = YYINITIAL;\n");
+    #endregion
+",
+                spec_access, spec.class_name);
 
+            // action init
+            var actioninit = Action_Methods_Init();
+            outstream.Write(actioninit);
 
-            string methinit = Action_Methods_Init();
-            outstream.Write(methinit);
+            // User specified constructor init code
+            var userinit = User_Init();
+            outstream.Write(userinit); 
 
-            /* User specified constructor code. */
-            if (null != spec.init_code)
-                outstream.Write(spec.init_code);
-
-            outstream.Write("  }\n\n");
-
-            string methstr = Action_Methods_Body();
-            outstream.Write(methstr);
+            var actions = Action_Methods_Body();
+            outstream.Write(actions);
         }
 
         /*
@@ -327,7 +309,7 @@ namespace LexLib
             Utility.assert(null != spec);
             Utility.assert(null != outstream);
 #endif
-
+            outstream.WriteLine("#region helpers");
             /* Function: yy_do_eof */
             if (spec.eof_code != null)
             {
@@ -341,7 +323,6 @@ namespace LexLib
                   + "  yy_eof_done = true;\n"
                   + "  }\n\n");
             }
-            States();
 
             /* Function: yybegin */
             outstream.Write(
@@ -529,6 +510,8 @@ namespace LexLib
             //  outstream.Write("\tprivate int yy_accept (int current) {\n");
             //    + "  return yy_acpt[current];\n"
             //    + "\t}\n");
+
+            outstream.WriteLine("#endregion");
         }
 
         /*
@@ -541,6 +524,9 @@ namespace LexLib
             Utility.assert(null != spec);
             Utility.assert(null != outstream);
 #endif
+            outstream.Write("namespace " + spec.namespace_name + "\n{\n");
+            outstream.Write(spec.usercode);
+            outstream.Write("/* test */\n");
 
             outstream.Write("\n\n");
             string spec_access = "internal ";
@@ -556,117 +542,140 @@ namespace LexLib
             outstream.Write("\n{\n");
         }
 
-        private void Accept_table()
+        StringBuilder Accept_table()
         {
             int size = spec.accept_list.Count;
             int lastelem = size - 1;
             StringBuilder sb = new StringBuilder(Properties.Settings.Default.MaxStr);
 
-            sb.Append("private static int[] yy_acpt = new int[]\n  {\n");
+            sb.Append(@"
+    static int[] yy_acpt = new int[]
+    {");
             for (int elem = 0; elem < size; elem++)
             {
-                sb.Append("  /* ");
-                sb.Append(elem);
-                sb.Append(" */ ");
-                string s = "  YY_NOT_ACCEPT"; // default to NOT
-                Accept accept = (Accept)spec.accept_list[elem];
-                if (accept != null)
-                {
-                    bool is_start = ((spec.anchor_array[elem] & Spec.START) != 0);
-                    bool is_end = ((spec.anchor_array[elem] & Spec.END) != 0);
-
-                    if (is_start && is_end)
-                        s = "  YY_START | YY_END";
-                    else if (is_start)
-                        s = "  YY_START";
-                    else if (is_end)
-                        s = "  YY_END";
-                    else
-                        s = "  YY_NO_ANCHOR";
-                }
-                sb.Append(s);
-                if (elem < lastelem)
-                    sb.Append(",");
-                sb.Append("\n");
+                sb.AppendFormat(@"
+    /* {0} */ {1}{2}", elem, getAccept(elem), elem < lastelem ? "," : "");
             }
-            sb.Append("  };\n");
-            outstream.Write(sb.ToString());
+
+            sb.Append(@"
+    };
+");
+            return sb;
         }
 
-        private void CMap_table()
+        string getAccept(int elem)
+        {
+            string s = "  YY_NOT_ACCEPT"; // default to NOT
+            Accept accept = (Accept)spec.accept_list[elem];
+            if (accept != null)
+            {
+                bool is_start = ((spec.anchor_array[elem] & Spec.START) != 0);
+                bool is_end = ((spec.anchor_array[elem] & Spec.END) != 0);
+
+                if (is_start && is_end)
+                    s = "  YY_START | YY_END";
+                else if (is_start)
+                    s = "  YY_START";
+                else if (is_end)
+                    s = "  YY_END";
+                else
+                    s = "  YY_NO_ANCHOR";
+            }
+
+            return s;
+        }
+
+        StringBuilder CMap_table()
         {
             //  int size = spec.col_map.Length;
             int size = spec.ccls_map.Length;
             int lastelem = size - 1;
-            outstream.Write("private static int[] yy_cmap = new int[]\n  {\n  ");
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append(@"
+    static int[] yy_cmap = new int[]
+    {");
             for (int i = 0; i < size; i++)
             {
-                outstream.Write(spec.col_map[spec.ccls_map[i]]);
+                if (i%8 == 0)
+                    sb.AppendFormat(@"
+    /* {0}-{1} */ ",
+                i, i + 7);
+                sb.Append(spec.col_map[spec.ccls_map[i]]);
                 if (i < lastelem)
-                    outstream.Write(",");
-                if (((i + 1) % 8) == 0)
-                    outstream.Write("\n  ");
-                else
-                    outstream.Write(" ");
+                    sb.Append(", ");
             }
-            if (size % 8 != 0)
-                outstream.Write("\n  ");
-            outstream.Write("};\n");
+
+            sb.Append(@"
+    };
+");
+            return sb;
         }
 
-        private void RMap_table()
+        StringBuilder RMap_table()
         {
             int size = spec.row_map.Length;
             int lastelem = size - 1;
-            outstream.Write("private static int[] yy_rmap = new int[]\n  {\n  ");
+
+            StringBuilder sb = new StringBuilder();
+            sb.Append(@"
+    static int[] yy_rmap = new int[]
+    {");
+
             for (int i = 0; i < size; ++i)
             {
-                outstream.Write(spec.row_map[i]);
+                if (i % 8 == 0)
+                    sb.AppendFormat(@"
+    /* {0}-{1} */ ", i, i + 7);
+                sb.Append(spec.row_map[i]);
                 if (i < lastelem)
-                    outstream.Write(",");
-                if (((i + 1) % 8) == 0)
-                    outstream.Write("\n  ");
-                else
-                    outstream.Write(" ");
+                    sb.Append(", ");
             }
-            if (size % 8 != 0)
-                outstream.Write("\n  ");
-            outstream.Write("};\n");
+
+            sb.Append(@"
+    };
+");
+            return sb;
         }
 
-        private void YYNXT_table()
+        StringBuilder YYNXT_table()
         {
             int size = spec.dtrans_list.Count;
             int lastelem = size - 1;
             int lastcol = spec.dtrans_ncols - 1;
-            StringBuilder sb = new StringBuilder(Properties.Settings.Default.MaxStr);
-            sb.Append("private static int[,] yy_nxt = new int[,]\n  {\n");
+            
+            StringBuilder sb = new StringBuilder();
+            sb.Append(@"
+    static int[,] yy_nxt = new int[,]
+    {");
+
             for (int elem = 0; elem < size; elem++)
             {
                 DTrans cdt_list = (DTrans)spec.dtrans_list[elem];
 #if DEBUG
                 Utility.assert(spec.dtrans_ncols <= cdt_list.GetDTransLength());
 #endif
-                sb.Append("  { ");
+                sb.Append(@"
+        {");
                 for (int i = 0; i < spec.dtrans_ncols; i++)
                 {
+                    if (i % 8 == 0)
+                        sb.AppendFormat(@"
+        /* {0}-{1} */ ", i, i + 7);
                     sb.Append(cdt_list.GetDTrans(i));
                     if (i < lastcol)
-                    {
-                        sb.Append(",");
-                        if (((i + 1) % 8) == 0)
-                            sb.Append("\n   ");
-                        else
-                            sb.Append(" ");
-                    }
+                        sb.Append(", ");
                 }
-                sb.Append(" }");
-                if (elem < lastelem)
-                    sb.Append(",");
-                sb.Append("\n");
+
+                sb.AppendFormat(@"
+        }}{0}", elem < lastelem ? "," : "");
             }
-            sb.Append("  };\n");
-            outstream.Write(sb.ToString());
+
+            sb.Append(@"
+    };
+");
+
+            return sb;
         }
 
         /*
@@ -680,24 +689,34 @@ namespace LexLib
             Utility.assert(null != outstream);
 #endif
 
-            Accept_table();
-            CMap_table();
-            RMap_table();
-            YYNXT_table();
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append(@"
+    #region tables
+");
+            sb.Append(Accept_table());
+            sb.Append(CMap_table());
+            sb.Append(RMap_table());
+            sb.Append(YYNXT_table());
+
+            sb.Append(@"
+    #endregion
+");
+            outstream.Write(sb);
         }
 
         string EOF_Test()
         {
-            StringBuilder sb = new StringBuilder(Properties.Settings.Default.MaxStr);
+            StringBuilder sb = new StringBuilder();
             if (spec.eof_code != null)
-                sb.Append("        yy_do_eof();\n");
+                sb.AppendLine("        yy_do_eof();");
 
             if (spec.integer_type)
-                sb.Append("        return YYEOF;\n");
-            else if (null != spec.eof_value_code)
+                sb.AppendLine("        return YYEOF;");
+            else if (spec.eof_value_code != null)
                 sb.Append(spec.eof_value_code);
             else
-                sb.Append("        return null;\n");
+                sb.AppendLine("        return null;");
             return sb.ToString();
         }
 
@@ -705,7 +724,7 @@ namespace LexLib
          * Function: Driver
          * Description: 
          */
-        private void Driver()
+        void Driver()
         {
 #if DEBUG
             Utility.assert(null != spec);
@@ -713,8 +732,8 @@ namespace LexLib
 #endif
             Table();
 
-            string begin_str = "";
-            string state_str = "";
+            //string begin_str = "";
+            //string state_str = "";
 #if NOT_EDBG
     begin_str = "  System.Console.WriteLine(\"Begin\");\n";
     state_str =
@@ -737,109 +756,120 @@ namespace LexLib
 ;
 #endif
 
-            string hdr_str = "";
-            if (spec.integer_type)
-                hdr_str = "public int " + spec.function_name + "()\n";
-            else if (spec.intwrap_type)
-                hdr_str = "public Int32 " + spec.function_name + "()\n";
+            var sb = new StringBuilder();
+            sb.AppendFormat(@"
+    #region driver
+    public {0} {1}()
+    {{
+    char yy_lookahead;
+    int yy_anchor = YY_NO_ANCHOR;
+    int yy_state = yy_state_dtrans[yy_lexical_state];
+    int yy_next_state = YY_NO_STATE;
+    int yy_last_accept_state = YY_NO_STATE;
+    bool yy_initial = true;
+    int yy_this_accept;
+
+    yy_mark_start();
+    yy_this_accept = yy_acpt[yy_state];
+    if (YY_NOT_ACCEPT != yy_this_accept)
+    {{
+        yy_last_accept_state = yy_state;
+        yy_mark_end();
+    }}
+
+    // begin_str
+
+    while (true)
+    {{
+        if (yy_initial && yy_at_bol)
+        {{
+            yy_lookahead = (char)YY_BOL;
+        }}
+        else
+        {{
+            yy_lookahead = yy_advance();
+        }}
+
+        yy_next_state = yy_nxt[yy_rmap[yy_state], yy_cmap[yy_lookahead]];
+
+        // state_str
+
+        if (YY_EOF == yy_lookahead && yy_initial)
+        {{
+            // EOF_Test()
+            {2} 
+        }}
+
+        if (YY_F != yy_next_state)
+        {{
+            yy_state = yy_next_state;
+            yy_initial = false;
+            yy_this_accept = yy_acpt[yy_state];
+            if (YY_NOT_ACCEPT != yy_this_accept)
+            {{
+                yy_last_accept_state = yy_state;
+                yy_mark_end();
+            }}
+        }}
+        else
+        {{
+            if (YY_NO_STATE == yy_last_accept_state)
+            {{
+                throw new ApplicationException(""Lexical Error: Unmatched Input."");
+            }}
             else
-                hdr_str = "public " + spec.type_name
-                    + " " + spec.function_name + "()\n";
+            {{
+                yy_anchor = yy_acpt[yy_last_accept_state];
+                if (0 != (YY_END & yy_anchor))
+                {{
+                    yy_move_end();
+                }}
 
-            outstream.Write(hdr_str
-              + "  {\n"
-              + "  char yy_lookahead;\n"
-              + "  int yy_anchor = YY_NO_ANCHOR;\n"
-              + "  int yy_state = yy_state_dtrans[yy_lexical_state];\n"
-              + "  int yy_next_state = YY_NO_STATE;\n"
-              + "  int yy_last_accept_state = YY_NO_STATE;\n"
-              + "  bool yy_initial = true;\n"
-              + "  int yy_this_accept;\n"
-              + "\n"
-              + "  yy_mark_start();\n"
-              + "  yy_this_accept = yy_acpt[yy_state];\n"
-              + "  if (YY_NOT_ACCEPT != yy_this_accept)\n"
-              + "    {\n"
-              + "    yy_last_accept_state = yy_state;\n"
-              + "    yy_mark_end();\n"
-              + "    }\n"
-              + begin_str
-              + "  while (true)\n"
-              + "    {\n"
-              + "    if (yy_initial && yy_at_bol)\n"
-              + "      yy_lookahead = (char) YY_BOL;\n"
-              + "    else\n"
-              + "      {\n"
-              + "      yy_lookahead = yy_advance();\n"
-              //    + "    yy_next_state = YY_F;\n"
-              //    + "    if (YY_EOF != yy_lookahead)\n"
-              + "      }\n"
+                yy_to_mark();
+                if (yy_last_accept_state< 0)
+                {{
+                    if (yy_last_accept_state< {3}) // spec.accept_list.Count
+                        yy_error(YY_E_INTERNAL, false);
+                }}
+                else
+                {{
+                    AcceptMethod m = accept_dispatch[yy_last_accept_state];
+                    if (m != null)
+                    {{
+                        Yytoken tmp = m(); // spec.type_name
+                        if (tmp != null)
+                            return tmp;
+                    }}
+                }}
 
-              + "    yy_next_state = yy_nxt[yy_rmap[yy_state],yy_cmap[yy_lookahead]];\n"
-              + state_str
+                yy_initial = true;
+                yy_state = yy_state_dtrans[yy_lexical_state];
+                yy_next_state = YY_NO_STATE;
+                yy_last_accept_state = YY_NO_STATE;
+                yy_mark_start();
+                yy_this_accept = yy_acpt[yy_state];
+                if (YY_NOT_ACCEPT != yy_this_accept)
+                {{
+                    yy_last_accept_state = yy_state;
+                    yy_mark_end();
+                }}
+            }}
+        }}
+    }}
+    #endregion
+", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count);
 
-              + "    if (YY_EOF == yy_lookahead && yy_initial)\n"
-              + "      {\n"
-              + EOF_Test()
-              + "      }\n"
+            outstream.Write(sb);
+        }
 
-              + "    if (YY_F != yy_next_state)\n"
-              + "      {\n"
-              + "      yy_state = yy_next_state;\n"
-              + "      yy_initial = false;\n"
-              + "      yy_this_accept = yy_acpt[yy_state];\n"
-              + "      if (YY_NOT_ACCEPT != yy_this_accept)\n"
-              + "        {\n"
-              + "        yy_last_accept_state = yy_state;\n"
-              + "        yy_mark_end();\n"
-              + "        }\n"
-              + "      }\n"
-              + "    else\n"
-              + "      {\n"
-              + "      if (YY_NO_STATE == yy_last_accept_state)\n"
-              + "        {\n"
-              + "        throw new System.ApplicationException(\"Lexical Error: Unmatched Input.\");\n"
-              + "        }\n"
-              + "      else\n"
-              + "        {\n"
-              + "        yy_anchor = yy_acpt[yy_last_accept_state];\n"
-              + "        if (0 != (YY_END & yy_anchor))\n"
-              + "          {\n"
-              + "          yy_move_end();\n"
-              + "          }\n"
-              + "        yy_to_mark();\n"
-              + "        if (yy_last_accept_state < 0)\n"
-              + "          {\n"
-              + "          if (yy_last_accept_state < " +
-                    spec.accept_list.Count
-                    + ")\n"
-              + "            yy_error(YY_E_INTERNAL, false);\n"
-              + "          }\n"
-              + "        else\n"
-              + "          {\n"
-              + "          AcceptMethod m = accept_dispatch[yy_last_accept_state];\n"
-              + "          if (m != null)\n"
-              + "            {\n"
-              + "            " + spec.type_name + " tmp = m();\n"
-              + "            if (tmp != null)\n"
-              + "              return tmp;\n"
-              + "            }\n"
-              + "          }\n"
-              + "        yy_initial = true;\n"
-              + "        yy_state = yy_state_dtrans[yy_lexical_state];\n"
-              + "        yy_next_state = YY_NO_STATE;\n"
-              + "        yy_last_accept_state = YY_NO_STATE;\n"
-              + "        yy_mark_start();\n"
-              + "        yy_this_accept = yy_acpt[yy_state];\n"
-              + "        if (YY_NOT_ACCEPT != yy_this_accept)\n"
-              + "          {\n"
-              + "          yy_last_accept_state = yy_state;\n"
-              + "          yy_mark_end();\n"
-              + "          }\n"
-              + "        }\n"
-              + "      }\n"
-              + "    }\n"
-              + "  }\n");
+        string getDriverType()
+        {
+            string type = spec.type_name;
+            if (spec.integer_type)
+                type = "int";
+            else if (spec.intwrap_type)
+                type = "Int32";
+            return type;
         }
 
         /*
@@ -885,44 +915,73 @@ namespace LexLib
             return sb.ToString();
         }
 
-        /*
-         * Function: Action_Methods_Init
-         */
-        private string Action_Methods_Init()
+        string User_Init()
+        {
+            var s = string.Format(@"
+    #region user init
+    void userInit()
+    {{
+    {0}
+    }}
+    #endregion
+", spec.init_code == null ? "// no user init" : spec.init_code);
+            return s;
+        }
+
+
+
+        private StringBuilder Action_Methods_Init()
         {
             int size = spec.accept_list.Count;
             Accept accept;
             StringBuilder tbl = new StringBuilder();
+            tbl.Append(@"
+    #region action init
+    void actionInit()
+    {
+");
 
 #if DEBUG
             Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
 #endif
-            tbl.Append("accept_dispatch = new AcceptMethod[] \n {\n");
+            tbl.Append(@"
+    accept_dispatch = new AcceptMethod[]
+        {
+");
             for (int elem = 0; elem < size; elem++)
             {
                 accept = (Accept)spec.accept_list[elem];
                 if (accept != null && accept.action != null)
                 {
-                    tbl.Append("  new AcceptMethod(this.Accept_");
-                    tbl.Append(elem);
-                    tbl.Append("),\n");
+                    tbl.AppendFormat(@"
+            new AcceptMethod(this.Accept_{0}),
+", elem);
                 }
                 else
-                    tbl.Append("  null,\n");
+                    tbl.Append(@"
+            null,
+");
             }
-            tbl.Append("  };\n");
-            return tbl.ToString();
+
+            tbl.Append(@"
+        };
+    }
+    #endregion
+");
+            return tbl;
         }
 
         /*
          * Function: Action_Methods_Body
          */
-        private string Action_Methods_Body()
+        private StringBuilder Action_Methods_Body()
         {
             int size = spec.accept_list.Count;
             Accept accept;
             StringBuilder sb = new StringBuilder(Properties.Settings.Default.MaxStr);
-
+            sb.Append(@"
+    #region action methods
+");
 #if DEBUG
             Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
 #endif
@@ -931,20 +990,18 @@ namespace LexLib
                 accept = (Accept)spec.accept_list[elem];
                 if (accept != null && accept.action != null)
                 {
-                    sb.Append(spec.type_name + " Accept_");
-                    sb.Append(elem);
-                    sb.Append("()\n");
-                    sb.Append("    { // begin accept action #");
-                    sb.Append(elem);
-                    sb.Append("\n");
-                    sb.Append(accept.action);
-                    sb.Append("\n");
-                    sb.Append("    } // end accept action #");
-                    sb.Append(elem);
-                    sb.Append("\n\n");
+                    sb.AppendFormat(@"
+    {1} Accept_{0}()
+    {2}
+",
+                    elem, spec.type_name, accept.action);
                 }
             }
-            return sb.ToString();
+
+            sb.Append(@"
+    #endregion
+");
+            return sb;
         }
 
 
@@ -958,7 +1015,10 @@ namespace LexLib
             Utility.assert(null != spec);
             Utility.assert(null != outstream);
 #endif
-            outstream.Write("}\n");
+            outstream.Write(@"
+    }
+}
+");
         }
     }
 }
