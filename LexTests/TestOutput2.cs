@@ -60,7 +60,6 @@
     {
 
         #region constants
-
         const int YY_BUFFER_SIZE = 512;
         const int YY_F = -1;
         const int YY_NO_STATE = -1;
