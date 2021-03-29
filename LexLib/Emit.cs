@@ -836,7 +836,7 @@ namespace LexLib
                     AcceptMethod m = accept_dispatch[yy_last_accept_state];
                     if (m != null)
                     {{
-                        Yytoken tmp = m(); // spec.type_name
+                        {4} tmp = m(); // spec.type_name
                         if (tmp != null)
                             return tmp;
                     }}
@@ -856,8 +856,9 @@ namespace LexLib
             }}
         }}
     }}
+    }}
     #endregion
-", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count);
+", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count, spec.type_name);
 
             outstream.Write(sb);
         }
