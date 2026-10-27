@@ -1,0 +1,3 @@
+# Formatting-only commits; use with git blame --ignore-revs-file (or blame.ignoreRevsFile).
+# style: file-scoped namespaces and dotnet format
+f0fdfc487f6d16dcfa4aeb6537a360b07b95d57d
