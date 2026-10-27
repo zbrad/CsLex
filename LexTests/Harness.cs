@@ -29,7 +29,11 @@ public static class Harness
     public static string Generate(string specText) => LexGenerator.Generate(specText);
 
     /// <summary>Compile generated source into an in-memory assembly.</summary>
-    public static Assembly Compile(string source)
+    public static Assembly Compile(string source) =>
+        Compile(source, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+    /// <summary>Compile with the given options; warnings promoted to errors fail too.</summary>
+    public static Assembly Compile(string source, CSharpCompilationOptions options)
     {
         var refs = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))
             .Split(Path.PathSeparator)
@@ -38,7 +42,7 @@ public static class Harness
             "GeneratedLexer_" + Guid.NewGuid().ToString("N"),
             new[] { CSharpSyntaxTree.ParseText(source) },
             refs,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+            options);
         var pe = new MemoryStream();
         var result = compilation.Emit(pe);
         if (!result.Success)
