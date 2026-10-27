@@ -135,6 +135,33 @@ confirmed some findings and turned up more. Each fix below has a test in
   - a `ReadOnlySpan<char>` `yytext`, which needs `System.Memory` on older
     targets.
 
+### Status after phase 5
+
+- **Concurrency.** `MakeNfa` and `SimplifyNfa` kept per-run state in static
+  fields, so two concurrent generations corrupted each other (reproduced by a
+  test). Those fields are now `[ThreadStatic]`.
+- **Packages** (built by `dotnet pack`, version `2.0.0-preview.1`, not
+  published):
+  - `CsLex` — the library;
+  - `CsLex.Tool` — the `cslex` dotnet tool;
+  - `CsLex.SourceGenerator` — an incremental generator that reads
+    `AdditionalFiles` `*.lex` and reports spec errors as `CSLEX001`.
+
+  Each package carries `README.md`, `LICENSE`, and `THIRD-PARTY-NOTICES.md`
+  (the JLex notice).
+- **The generator** targets `netstandard2.0` and compiles LexLib's sources in.
+  It loads and runs as an analyzer from the package. That shows
+  `netstandard2.0` works; it doesn't confirm the "required" claim in section 3,
+  which is still from memory.
+- **`tools/package-smoke/run.sh`** packs the tool and the generator, installs the
+  tool, and builds a nullable, warnings-as-errors consumer from the local
+  packages. The consumer lexer's output matches the 1999 reference.
+- **CI** (`.github/workflows/ci.yml`) builds and tests on Linux and Windows, and
+  on Linux runs both scripts. Actions are pinned to commit SHAs, with
+  `contents: read`.
+- **`.gitattributes`** keeps test fixtures LF on every platform.
+- **README** rewritten.
+
 **Token reference.** `LexTests/Golden/*.tokens.txt` are the output of lexers
 built by the *original* 1999 generator (tag `original-1999`) and run on
 `test.txt`. `tools/original-reference/reproduce.sh` regenerates them.

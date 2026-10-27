@@ -12,7 +12,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        var s = new StreamReader(args[0]);
+        using var s = new StreamReader(args[0]);
         MyLex yy = new MyLex(s);
         MyToken t;
         while ((t = yy.Lex()) != null)
