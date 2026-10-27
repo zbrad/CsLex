@@ -4,5 +4,4 @@
   <Project Path="CsLexLibTest/CsLexLibTest.csproj" />
   <Project Path="LexLib/LexLib.csproj" />
   <Project Path="LexTests/LexTests.csproj" />
-  <Project Path="TestOutputSimple/TestOutputSimple.csproj" />
 </Solution>

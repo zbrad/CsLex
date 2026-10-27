@@ -4,8 +4,6 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Saved generator output from 2015, kept for reference only (removed in phase 2). -->
-    <Compile Remove="TestOutput.cs;TestOutput2.cs" />
     <None Include="LexFiles\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Golden\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
