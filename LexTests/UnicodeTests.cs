@@ -85,4 +85,15 @@ public class UnicodeTests
         // tested there.
         Assert.Equal("greek:\u03b1\u03b2\neuro\n", transcript);
     }
+
+    [Fact]
+    public void Ignorecase_folds_non_ascii_letters()
+    {
+        var spec = "%%\n%type string\n%unicode\n%ignorecase\n%%\n"
+            + "\\u00e9+ { return \"e:\" + yytext(); }\n"
+            + "[\\u03b1-\\u03c9]+ { return \"greek:\" + yytext(); }\n";
+        var transcript = Harness.Run(Harness.Compile(Harness.Generate(spec)),
+            "\u00c9\u00e9\u00c9\u0391\u03b2");
+        Assert.Equal("e:\u00c9\u00e9\u00c9\ngreek:\u0391\u03b2\n", transcript);
+    }
 }

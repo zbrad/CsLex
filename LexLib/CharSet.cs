@@ -45,8 +45,9 @@ internal class CharSet
         /* Do this in a Unicode-friendly way. */
         /* (note that duplicate adds have no effect) */
         add(c);
-        add(Char.ToLower(c));
-        add(Char.ToUpper(c));
+        /* Invariant, so the tables don't depend on the build machine's culture. */
+        add(Char.ToLowerInvariant(c));
+        add(Char.ToUpperInvariant(c));
     }
 
     /*
