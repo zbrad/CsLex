@@ -69,7 +69,7 @@ namespace LexLib
 
             if (spec.verbose)
             {
-                Console.WriteLine("NFA comprised of "
+                Log.Out.WriteLine("NFA comprised of "
                           + (spec.nfa_states.Count + 1)
                           + " states.");
             }

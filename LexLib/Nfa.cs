@@ -62,43 +62,43 @@ namespace LexLib
 
         public void dump()
         {
-            Console.WriteLine("[Nfa begin dump]");
-            Console.WriteLine("label=" + label);
-            Console.WriteLine("edge=" + edge);
-            Console.Write("set=");
+            Log.Out.WriteLine("[Nfa begin dump]");
+            Log.Out.WriteLine("label=" + label);
+            Log.Out.WriteLine("edge=" + edge);
+            Log.Out.Write("set=");
             if (cset == null)
-                Console.WriteLine("null");
+                Log.Out.WriteLine("null");
             else
-                Console.WriteLine(cset);
-            Console.Write("next=");
+                Log.Out.WriteLine(cset);
+            Log.Out.Write("next=");
             if (next == null)
-                Console.WriteLine("null");
+                Log.Out.WriteLine("null");
             else
-                Console.WriteLine(next);
-            Console.Write("next2=");
+                Log.Out.WriteLine(next);
+            Log.Out.Write("next2=");
             if (next2 == null)
-                Console.WriteLine("null");
+                Log.Out.WriteLine("null");
             else
-                Console.WriteLine(next2);
-            Console.Write("accept=");
+                Log.Out.WriteLine(next2);
+            Log.Out.Write("accept=");
             if (accept == null)
-                Console.WriteLine("null");
+                Log.Out.WriteLine("null");
             else
                 accept.dump();
-            Console.WriteLine("anchor=" + anchor);
-            Console.Write("states=");
+            Log.Out.WriteLine("anchor=" + anchor);
+            Log.Out.Write("states=");
             if (states == null)
-                Console.WriteLine("null");
+                Log.Out.WriteLine("null");
             else
             {
                 for (int i = 0; i < states.GetLength(); i++)
                     if (states.Get(i))
-                        Console.Write("1");
+                        Log.Out.Write("1");
                     else
-                        Console.Write("0");
-                Console.WriteLine("");
+                        Log.Out.Write("0");
+                Log.Out.WriteLine("");
             }
-            Console.WriteLine("[Nfa end dump]");
+            Log.Out.WriteLine("[Nfa end dump]");
         }
 
         /*

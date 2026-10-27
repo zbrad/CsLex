@@ -1,5 +1,8 @@
 using System;
 
+namespace LexLib
+{
+
 public class Error
 {
     /*
@@ -7,7 +10,7 @@ public class Error
      */
     public static void impos(String message)
     {
-        throw new LexLib.LexSpecException(-1, 0, "Lex Error: " + message);
+        throw new LexSpecException(-1, 0, "Lex Error: " + message);
     }
 
     /*
@@ -73,12 +76,16 @@ public class Error
      */
     public static void parse_error(int error_code, int line_number)
     {
-        throw new LexLib.LexSpecException(error_code, line_number,
+        parse_error(error_code, line_number, null);
+    }
+
+    /* detail, when given, names what was wrong (a macro or state name). */
+    public static void parse_error(int error_code, int line_number, String detail)
+    {
+        throw new LexSpecException(error_code, line_number,
             "Error: Parse error at line " + line_number + ".\n"
-            + "Description: " + errmsg(error_code));
+            + "Description: " + errmsg(error_code)
+            + (detail == null ? "" : " [" + detail + "]"));
     }
 }
-
-
-
-
+}

@@ -58,7 +58,7 @@ namespace LexLib
             BitSet clsB = new BitSet();
             Dictionary<int, int> h = new Dictionary<int, int>();
 
-            Console.WriteLine("Working on character classes.");
+            Log.Out.WriteLine("Working on character classes.");
             for (int index = 0; index < spec.nfa_states.Count; index++)
             {
                 Nfa nfa = (Nfa)spec.nfa_states[index];
@@ -81,10 +81,10 @@ namespace LexLib
                 clsA.And(clsB);  // split the classes which show up on both sides of edge
                 if (clsA.GetLength() == 0)
                 {
-                    Console.Write(".");
+                    Log.Out.Write(".");
                     continue;
                 }
-                Console.Write(":");
+                Log.Out.Write(":");
 
                 /*
                  * and split them.
@@ -103,7 +103,7 @@ namespace LexLib
                             {
                                 h.Add(split, nextcls++); // make new class
 #if DEBUG
-                                Console.WriteLine("Adding char " + (nextcls - 1) + " split=" + split + " i=" + i);
+                                Log.Out.WriteLine("Adding char " + (nextcls - 1) + " split=" + split + " i=" + i);
 #endif
                             }
                             ccls[i] = (int)h[split];
@@ -111,8 +111,8 @@ namespace LexLib
                     }
                 }
             }
-            Console.WriteLine();
-            Console.WriteLine("NFA has " + nextcls + " distinct character classes.");
+            Log.Out.WriteLine();
+            Log.Out.WriteLine("NFA has " + nextcls + " distinct character classes.");
             mapped_charset_size = nextcls;
         }
     }

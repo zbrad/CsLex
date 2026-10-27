@@ -176,14 +176,14 @@ namespace LexLib
                 if (!dfa.IsMarked())
                 {
 #if OLD_DUMP_DEBUG
-      Console.Write("*");
+      Log.Out.Write("*");
 
-      Console.WriteLine("---------------");
-      Console.Write("working on DFA state " 
+      Log.Out.WriteLine("---------------");
+      Log.Out.Write("working on DFA state " 
 		    + unmarked_dfa
 		    + " = NFA states: ");
       Nfa2Dfa.Print_Set(dfa.GetNFASet());
-      Console.WriteLine("");
+      Log.Out.WriteLine("");
 #endif
                     return dfa;
                 }

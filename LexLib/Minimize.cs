@@ -294,7 +294,7 @@ namespace LexLib
                 }
             }
 #if DEBUG
-            Console.Write("k = " + k + "\nreduced_nrows = " + reduced_nrows + "\n");
+            Log.Out.Write("k = " + k + "\nreduced_nrows = " + reduced_nrows + "\n");
             Utility.assert(k == reduced_nrows);
 #endif
             spec.dtrans_list.RemoveRange(reduced_nrows, dtrans_size - reduced_nrows);
@@ -436,10 +436,10 @@ namespace LexLib
                     }
                 }
             }
-            Console.WriteLine(group.Count + " states after removal of redundant states.");
+            Log.Out.WriteLine(group.Count + " states after removal of redundant states.");
             //  if (spec.verbose) && Utility.OLD_DUMP_DEBUG)
 #if OLD_DUMP_DEBUG
-  Console.WriteLine("\nStates grouped as follows after minimization");
+  Log.Out.WriteLine("\nStates grouped as follows after minimization");
   pgroups();
 #endif
             fix_dtrans();
@@ -513,9 +513,9 @@ namespace LexLib
             }
 
 #if OLD_DUMP_DEBUG
-  Console.WriteLine("Initial grouping:");
+  Log.Out.WriteLine("Initial grouping:");
   pgroups();
-  Console.WriteLine("");
+  Log.Out.WriteLine("");
 #endif
         }
 
@@ -528,7 +528,7 @@ namespace LexLib
             for (int i = 0; i < size; ++i)
             {
                 DTrans dtrans = dtrans_group[i];
-                Console.Write(dtrans.GetLabel() + " ");
+                Log.Out.Write(dtrans.GetLabel() + " ");
             }
         }
 
@@ -539,16 +539,16 @@ namespace LexLib
 
             for (int i = 0; i < group_size; ++i)
             {
-                Console.Write("\tGroup " + i + " {");
+                Log.Out.Write("\tGroup " + i + " {");
                 pset(group[i]);
-                Console.WriteLine("}\n");
+                Log.Out.WriteLine("}\n");
             }
 
-            Console.WriteLine("");
+            Log.Out.WriteLine("");
             dtrans_size = spec.dtrans_list.Count;
             for (int i = 0; i < dtrans_size; ++i)
             {
-                Console.WriteLine("\tstate " + i
+                Log.Out.WriteLine("\tstate " + i
                           + " is in group " + ingroup[i]);
             }
         }

@@ -1,5 +1,8 @@
 using System;
 
+namespace LexLib
+{
+
 public class Accept
 {
     /*
@@ -42,7 +45,8 @@ public class Accept
 
     public void dump()
     {
-        Console.WriteLine("Line:" + line_number + ":" + action);
+        Log.Out.WriteLine("Line:" + line_number + ":" + action);
     }
 
+}
 }

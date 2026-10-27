@@ -53,7 +53,7 @@ public const bool DO_DEBUG = false;
             sb.Append("'] [token: ");
             sb.Append(token);
             sb.Append("]");
-            Console.WriteLine(sb.ToString());
+            Log.Out.WriteLine(sb.ToString());
         }
 
         /*
@@ -75,7 +75,7 @@ public const bool DO_DEBUG = false;
             sb.Append("'] [token: ");
             sb.Append(token);
             sb.Append("]");
-            Console.WriteLine(sb.ToString());
+            Log.Out.WriteLine(sb.ToString());
         }
 
         /*
@@ -86,7 +86,7 @@ public const bool DO_DEBUG = false;
         {
             if (false == expr)
             {
-                Console.WriteLine("Assertion Failed");
+                Log.Out.WriteLine("Assertion Failed");
                 throw new ApplicationException("Assertion Failed.");
             }
         }
@@ -260,21 +260,21 @@ public const bool DO_DEBUG = false;
 
                 if ('\0' == a[a_first + elem] && '\0' == b[b_first + elem])
                 {
-                    /*Console.WriteLine("return 0");*/
+                    /*Log.Out.WriteLine("return 0");*/
                     return 0;
                 }
                 if (a[a_first + elem] < b[b_first + elem])
                 {
-                    /*Console.WriteLine("return 1");*/
+                    /*Log.Out.WriteLine("return 1");*/
                     return 1;
                 }
                 else if (a[a_first + elem] > b[b_first + elem])
                 {
-                    /*Console.WriteLine("return -1");*/
+                    /*Log.Out.WriteLine("return -1");*/
                     return -1;
                 }
             }
-            /*Console.WriteLine("return 0");*/
+            /*Log.Out.WriteLine("return 0");*/
             return 0;
         }
 

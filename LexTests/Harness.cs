@@ -31,16 +31,7 @@ namespace LexTests
             var input = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(specText)));
             var mem = new MemoryStream();
             var output = new StreamWriter(mem, new UTF8Encoding(false));
-            var saved = Console.Out;
-            Console.SetOut(TextWriter.Null);   // the generator prints progress
-            try
-            {
-                new Gen(input, output).generate();
-            }
-            finally
-            {
-                Console.SetOut(saved);
-            }
+            new Gen(input, output).generate();
             output.Flush();
             return Encoding.UTF8.GetString(mem.ToArray());
         }

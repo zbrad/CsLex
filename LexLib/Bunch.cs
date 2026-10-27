@@ -50,18 +50,18 @@ namespace LexLib
         public void dump()
         {
 #if DUMMY
-  Console.WriteLine("[CBunch Dump Begin]");
+  Log.Out.WriteLine("[CBunch Dump Begin]");
   if (nfa_set == null)
-    Console.WriteLine("nfa_set=null");
+    Log.Out.WriteLine("nfa_set=null");
   else
     {
     int n1 = nfa_set.Count;
     for (int i = 0; i < n1; i++)
       {
       Object o2 = nfa_set[i];
-      Console.Write("i="+Int32.ToString(i)+" elem=");
+      Log.Out.Write("i="+Int32.ToString(i)+" elem=");
       if (o2 == null)
-	Console.WriteLine("null");
+	Log.Out.WriteLine("null");
       else
 	{
 	CNfa elem = (CNfa) o2;
@@ -70,23 +70,23 @@ namespace LexLib
       }
     }
   if (nfa_bit == null)
-    Console.WriteLine("nfa_bit=null");
+    Log.Out.WriteLine("nfa_bit=null");
   else
     {
-    Console.Write("nfa_bit("+Int32.ToString(nfa_bit.GetLength())+")=");
+    Log.Out.Write("nfa_bit("+Int32.ToString(nfa_bit.GetLength())+")=");
     for (int i = 0; i < nfa_bit.GetLength(); i++)
       if (nfa_bit.Get(i))
-	Console.Write("1");
+	Log.Out.Write("1");
       else
-	Console.Write("0");
-    Console.WriteLine("");
+	Log.Out.Write("0");
+    Log.Out.WriteLine("");
     }
   if (accept == null)
-    Console.WriteLine("accept=null");
+    Log.Out.WriteLine("accept=null");
   else
     accept.dump();
-  Console.WriteLine("anchor="+Int32.ToString(anchor));
-  Console.WriteLine("accept_index="+Int32.ToString(accept_index));
+  Log.Out.WriteLine("anchor="+Int32.ToString(anchor));
+  Log.Out.WriteLine("accept_index="+Int32.ToString(accept_index));
 #endif
         }
 
@@ -140,7 +140,7 @@ namespace LexLib
 #if OLD_DUMP_DEBUG
     if (null != state.GetAccept())
       {
-      Console.WriteLine("Looking at accepting state "
+      Log.Out.WriteLine("Looking at accepting state "
 			+ state.GetLabel()
 			+ " with <"
 			+ state.GetAccept().action
@@ -154,7 +154,7 @@ namespace LexLib
                     anchor = state.GetAnchor();
 
 #if OLD_DUMP_DEBUG
-      Console.WriteLine("Found accepting state "
+      Log.Out.WriteLine("Found accepting state "
 			+ state.GetLabel()
 			+ " with <"
 			+ state.GetAccept().action
@@ -217,14 +217,14 @@ namespace LexLib
             nfa_set.Sort(0, nfa_set.Count, null);
             //nfa_set.Sort(0, nfa_set.Count, new NfaComp());
 #if OLD_DEBUG
-  Console.Write("NFA vector indices: ");  
+  Log.Out.Write("NFA vector indices: ");  
 	    
   for (int index = 0; index < nfa_set.Count; index++)
     {
     Nfa elem = (Nfa) nfa_set[index];
-    Console.Write(elem.GetLabel() + " ");
+    Log.Out.Write(elem.GetLabel() + " ");
     }
-  Console.Write("\n");
+  Log.Out.Write("\n");
 #endif
             return;
         }
@@ -256,8 +256,8 @@ namespace LexLib
                     }
                     nfa_set.Add(state.GetNext());
 #if OLD_DEBUG
-      Console.WriteLine("Size of bitset: " + nfa_bit.GetLength());
-      Console.WriteLine("Reference index: " + state.GetNext().GetLabel());
+      Log.Out.WriteLine("Size of bitset: " + nfa_bit.GetLength());
+      Log.Out.WriteLine("Reference index: " + state.GetNext().GetLabel());
 #endif
                     nfa_bit.Set(state.GetNext().GetLabel(), true);
                 }

@@ -100,6 +100,7 @@ namespace LexTests
                 () => Harness.Generate("%%\n%%\n<NOSUCHSTATE> a { return null; }\n"));
             Assert.Equal(Error.E_STATE, e.ErrorCode);
             Assert.Equal(3, e.Line);
+            Assert.Contains("[NOSUCHSTATE]", e.Message);
         }
 
         [Fact]
@@ -108,6 +109,7 @@ namespace LexTests
             var e = Assert.Throws<LexSpecException>(
                 () => Harness.Generate("%%\n%%\n{NOSUCHMACRO} { return null; }\n"));
             Assert.Equal(Error.E_NOMAC, e.ErrorCode);
+            Assert.Contains("[NOSUCHMACRO]", e.Message);
         }
 
         [Fact]

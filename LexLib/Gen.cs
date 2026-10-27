@@ -59,11 +59,20 @@ namespace LexLib
         public const int PLUS_CLOSE = 17;
 
         public Gen(StreamReader sr, StreamWriter sw)
+            : this(sr, sw, null)
+        {
+        }
+
+        /* log receives progress and debug output; null discards it. */
+        public Gen(StreamReader sr, StreamWriter sw, TextWriter log)
         {
             this.instream = sr;
             this.outstream = sw;
+            this.log = log;
             init();
         }
+
+        private TextWriter log;
 
         void init()
         { 
@@ -108,6 +117,19 @@ namespace LexLib
          */
         public void generate()
         {
+            var previous = Log.Swap(log);
+            try
+            {
+                generate_core();
+            }
+            finally
+            {
+                Log.Swap(previous);
+            }
+        }
+
+        private void generate_core()
+        {
             if (!init_flag)
             {
                 Error.parse_error(Error.E_INIT, 0);
@@ -123,7 +145,7 @@ namespace LexLib
 
             if (spec.verbose)
             {
-                Console.WriteLine("Processing first section -- user code.");
+                Log.Out.WriteLine("Processing first section -- user code.");
             }
 
             userCode();
@@ -134,7 +156,7 @@ namespace LexLib
 
             if (spec.verbose)
             {
-                Console.WriteLine("Processing second section -- Lex declarations.");
+                Log.Out.WriteLine("Processing second section -- Lex declarations.");
             }
             userDeclare();
             if (ibuf.eof_reached)
@@ -144,18 +166,18 @@ namespace LexLib
 
             if (spec.verbose)
             {
-                Console.WriteLine("Processing third section -- lexical rules.");
+                Log.Out.WriteLine("Processing third section -- lexical rules.");
             }
             userRules();
 
 #if DO_DEBUG
-  Console.WriteLine("Printing DO_DEBUG header");
+  Log.Out.WriteLine("Printing DO_DEBUG header");
   print_header();
 #endif
 
             if (spec.verbose)
             {
-                Console.WriteLine("Outputting lexical analyzer code.");
+                Log.Out.WriteLine("Outputting lexical analyzer code.");
             }
 
             emit.Write(spec, outstream);
@@ -593,8 +615,8 @@ namespace LexLib
                     saveMacro();
                 }
 #if OLD_DEBUG
-    Console.WriteLine("Line number " + ibuf.line_number + ":"); 
-    Console.Write(new String(ibuf.line, 0,ibuf.line_read));
+    Log.Out.WriteLine("Line number " + ibuf.line_number + ":"); 
+    Log.Out.Write(new String(ibuf.line, 0,ibuf.line_read));
 #endif
             }
         }
@@ -623,7 +645,7 @@ namespace LexLib
 
             if (spec.verbose)
             {
-                Console.WriteLine("Creating NFA machine representation.");
+                Log.Out.WriteLine("Creating NFA machine representation.");
             }
 
             MakeNfa.Allocate_BOL_EOF(spec);
@@ -640,19 +662,19 @@ namespace LexLib
 
             if (spec.verbose)
             {
-                Console.WriteLine("Creating DFA transition table.");
+                Log.Out.WriteLine("Creating DFA transition table.");
             }
 
             Nfa2Dfa.MakeDFA(spec);
 
 #if FOODEBUG
-  Console.WriteLine("Printing FOODEBUG header");
+  Log.Out.WriteLine("Printing FOODEBUG header");
   print_header();
 #endif
 
             if (spec.verbose)
             {
-                Console.WriteLine("Minimizing DFA transition table.");
+                Log.Out.WriteLine("Minimizing DFA transition table.");
             }
             minimize.min_dfa(spec);
         }
@@ -666,15 +688,15 @@ namespace LexLib
         {
             int i;
 
-            Console.Write(" [");
+            Log.Out.Write(" [");
             for (i = 0; i < spec.dtrans_ncols; ++i)
             {
                 if (cset.contains(i))
                 {
-                    Console.Write(interp_int(i));
+                    Log.Out.Write(interp_int(i));
                 }
             }
-            Console.Write(']');
+            Log.Out.Write(']');
         }
 
         /*
@@ -737,22 +759,22 @@ namespace LexLib
             int j;
             int vsize;
 
-            Console.WriteLine("--------------------- NFA -----------------------");
+            Log.Out.WriteLine("--------------------- NFA -----------------------");
 
             for (elem = 0; elem < spec.nfa_states.Count; elem++)
             {
                 nfa = (Nfa)spec.nfa_states[elem];
 
-                Console.Write("Nfa state " + plab(nfa) + ": ");
+                Log.Out.Write("Nfa state " + plab(nfa) + ": ");
 
                 if (null == nfa.GetNext())
                 {
-                    Console.Write("(TERMINAL)");
+                    Log.Out.Write("(TERMINAL)");
                 }
                 else
                 {
-                    Console.Write("--> " + plab(nfa.GetNext()));
-                    Console.Write("--> " + plab(nfa.GetSib()));
+                    Log.Out.Write("--> " + plab(nfa.GetNext()));
+                    Log.Out.Write("--> " + plab(nfa.GetSib()));
 
                     switch (nfa.GetEdge())
                     {
@@ -761,30 +783,30 @@ namespace LexLib
                             break;
 
                         case Nfa.EPSILON:
-                            Console.Write(" EPSILON ");
+                            Log.Out.Write(" EPSILON ");
                             break;
 
                         default:
-                            Console.Write(" " + interp_int(nfa.GetEdge()));
+                            Log.Out.Write(" " + interp_int(nfa.GetEdge()));
                             break;
                     }
                 }
 
                 if (0 == elem)
                 {
-                    Console.Write(" (START STATE)");
+                    Log.Out.Write(" (START STATE)");
                 }
 
                 if (null != nfa.GetAccept())
                 {
-                    Console.Write(" accepting "
+                    Log.Out.Write(" accepting "
                           + ((0 != (nfa.GetAnchor() & Spec.START)) ? "^" : "")
                           + "<"
                           + nfa.GetAccept().action
                           + ">"
                           + ((0 != (nfa.GetAnchor() & Spec.END)) ? "$" : ""));
                 }
-                Console.WriteLine("");
+                Log.Out.WriteLine("");
             }
 
             foreach (string state in spec.states.Keys)
@@ -793,9 +815,9 @@ namespace LexLib
 #if DEBUG
                 Utility.assert(null != state);
 #endif
-                Console.WriteLine("State \"" + state
+                Log.Out.WriteLine("State \"" + state
                           + "\" has identifying index " + index + ".");
-                Console.Write("\tStart states of matching rules: ");
+                Log.Out.Write("\tStart states of matching rules: ");
 
                 vsize = spec.state_rules[index].Count;
                 for (j = 0; j < vsize; ++j)
@@ -805,13 +827,13 @@ namespace LexLib
                     Utility.assert(null != a);
 #endif
                     nfa = a[j];
-                    Console.Write(spec.nfa_states.IndexOf(nfa) + " ");
+                    Log.Out.Write(spec.nfa_states.IndexOf(nfa) + " ");
                 }
 
-                Console.WriteLine("");
+                Log.Out.WriteLine("");
             }
 
-            Console.WriteLine("-------------------- NFA ----------------------");
+            Log.Out.WriteLine("-------------------- NFA ----------------------");
         }
 
         /*
@@ -937,8 +959,7 @@ namespace LexLib
                     if (!spec.states.TryGetValue(name, out index))
                     { 
                         /* Uninitialized state. */
-                        Console.WriteLine("Uninitialized State Name: [" + name + "]");
-                        Error.parse_error(Error.E_STATE, ibuf.line_number);
+                        Error.parse_error(Error.E_STATE, ibuf.line_number, name);
                     }
 
                     states.Set(index, true);
@@ -1030,12 +1051,11 @@ namespace LexLib
             if (null == def)
             {
                 /*Error.impos("Undefined macro \"" + name + "\".");*/
-                Console.WriteLine("Error: Undefined macro \"" + name + "\".");
-                Error.parse_error(Error.E_NOMAC, ibuf.line_number);
+                Error.parse_error(Error.E_NOMAC, ibuf.line_number, name);
                 return ERROR;
             }
 #if OLD_DUMP_DEBUG
-  Console.WriteLine("expanded escape: \"" + def + "\"");
+  Log.Out.WriteLine("expanded escape: \"" + def + "\"");
 #endif
 
             /* Replace macro in new buffer,
@@ -1086,7 +1106,7 @@ namespace LexLib
             ibuf.line_read = rep_elem;
 
 #if OLD_DEBUG
-  Console.WriteLine(new String(ibuf.line,0,ibuf.line_read));
+  Log.Out.WriteLine(new String(ibuf.line,0,ibuf.line_read));
 #endif
             return NOT_ERROR;
         }
@@ -1241,8 +1261,8 @@ namespace LexLib
             String macro_name = new String(ibuf.line, start_name, count_name);
             String macro_def = new String(ibuf.line, start_def, count_def);
 #if OLD_DEBUG
-  Console.WriteLine("macro name \"" + macro_name + "\".");
-  Console.WriteLine("macro definition \"" + macro_def + "\".");
+  Log.Out.WriteLine("macro name \"" + macro_name + "\".");
+  Log.Out.WriteLine("macro definition \"" + macro_def + "\".");
 #endif
             /* Add macro name and definition to table. */
             spec.macros.Add(macro_name, macro_def);
@@ -1290,7 +1310,7 @@ namespace LexLib
             while (ibuf.line_index < ibuf.line_read)
             {
 #if OLD_DEBUG
-    Console.WriteLine("line read " + ibuf.line_read
+    Log.Out.WriteLine("line read " + ibuf.line_read
 		      + "\tline index = " + ibuf.line_index);
 #endif
 
@@ -1320,10 +1340,10 @@ namespace LexLib
                 count_state = ibuf.line_index - start_state;
 
 #if OLD_DEBUG
-    Console.WriteLine("State name \"" 
+    Log.Out.WriteLine("State name \"" 
 		      + new String(ibuf.line,start_state,count_state)
 			  + "\".");
-    Console.WriteLine("Integer index \"" 
+    Log.Out.WriteLine("Integer index \"" 
 		      + spec.states.Count
 		      + "\".");
 #endif
@@ -1582,8 +1602,8 @@ namespace LexLib
 #endif
 
 #if DESCENT_DEBUG
-  Console.Write("\nAccepting action:");
-  Console.WriteLine(accept.action);
+  Log.Out.Write("\nAccepting action:");
+  Log.Out.WriteLine(accept.action);
 #endif
 
             return accept;
@@ -1687,8 +1707,8 @@ namespace LexLib
 
             if (ibuf.line_index > ibuf.line_read)
             {
-                Console.WriteLine("ibuf.line_index = " + ibuf.line_index);
-                Console.WriteLine("ibuf.line_read = " + ibuf.line_read);
+                Log.Out.WriteLine("ibuf.line_index = " + ibuf.line_index);
+                Log.Out.WriteLine("ibuf.line_read = " + ibuf.line_read);
                 Utility.assert(ibuf.line_index <= ibuf.line_read);
             }
 
@@ -1786,7 +1806,7 @@ void DumpLexeme(char lexeme, int token, int index)
   sb.Append(token);
   sb.Append("\tIndex: ");
   sb.Append(index);
-  Console.WriteLine(sb.ToString());
+  Log.Out.WriteLine(sb.ToString());
   }
 #endif
 
@@ -1796,7 +1816,7 @@ void DumpLexeme(char lexeme, int token, int index)
          */
         private void details()
         {
-            Console.WriteLine("\n\t** Macros **");
+            Log.Out.WriteLine("\n\t** Macros **");
             foreach (string name in spec.macros.Keys)
             {
 #if DEBUG
@@ -1806,11 +1826,11 @@ void DumpLexeme(char lexeme, int token, int index)
 #if DEBUG
                 Utility.assert(null != def);
 #endif
-                Console.WriteLine("Macro name \"" + name + "\" has definition \""
+                Log.Out.WriteLine("Macro name \"" + name + "\" has definition \""
                           + def + "\".");
             }
 
-            Console.WriteLine("\n\t** States **");
+            Log.Out.WriteLine("\n\t** States **");
             foreach (string state in spec.states.Keys)
             {
                 int index = (int)spec.states[state];
@@ -1819,45 +1839,45 @@ void DumpLexeme(char lexeme, int token, int index)
                 Utility.assert(null != state);
 #endif
 
-                Console.WriteLine("State \"" + state + "\" has identifying index "
+                Log.Out.WriteLine("State \"" + state + "\" has identifying index "
                           + index + ".");
             }
 
-            Console.WriteLine("\n\t** Character Counting **");
+            Log.Out.WriteLine("\n\t** Character Counting **");
             if (!spec.count_chars)
-                Console.WriteLine("Character counting is off.");
+                Log.Out.WriteLine("Character counting is off.");
             else
             {
 #if DEBUG
                 Utility.assert(spec.count_lines);
 #endif
-                Console.WriteLine("Character counting is on.");
+                Log.Out.WriteLine("Character counting is on.");
             }
 
-            Console.WriteLine("\n\t** Line Counting **");
+            Log.Out.WriteLine("\n\t** Line Counting **");
             if (!spec.count_lines)
-                Console.WriteLine("Line counting is off.");
+                Log.Out.WriteLine("Line counting is off.");
             else
             {
 #if DEBUG
                 Utility.assert(spec.count_lines);
 #endif
-                Console.WriteLine("Line counting is on.");
+                Log.Out.WriteLine("Line counting is on.");
             }
 
-            Console.WriteLine("\n\t** Operating System Specificity **");
+            Log.Out.WriteLine("\n\t** Operating System Specificity **");
 
 #if FOODEBUG
   if (spec.nfa_states != null && spec.nfa_start != null)
     {
-    Console.WriteLine("\n\t** NFA machine **");
+    Log.Out.WriteLine("\n\t** NFA machine **");
     print_nfa();
     }
 #endif
 
             if (spec.dtrans_list != null)
             {
-                Console.WriteLine("\n\t** DFA transition table **");
+                Log.Out.WriteLine("\n\t** DFA transition table **");
             }
         }
 
@@ -1873,7 +1893,7 @@ void DumpLexeme(char lexeme, int token, int index)
             String str;
             Accept accept;
 
-            Console.WriteLine("/*---------------------- DFA -----------------------");
+            Log.Out.WriteLine("/*---------------------- DFA -----------------------");
 
             if (spec.states == null)
                 throw new ApplicationException("States is null");
@@ -1885,16 +1905,16 @@ void DumpLexeme(char lexeme, int token, int index)
                 Utility.assert(null != state);
 #endif
 
-                Console.WriteLine("State \"" + state + "\" has identifying index "
+                Log.Out.WriteLine("State \"" + state + "\" has identifying index "
                           + index + ".");
                 if (DTrans.F != spec.state_dtrans[index])
                 {
-                    Console.WriteLine("\tStart index in transition table: "
+                    Log.Out.WriteLine("\tStart index in transition table: "
                           + spec.state_dtrans[index]);
                 }
                 else
                 {
-                    Console.WriteLine("\tNo associated transition states.");
+                    Log.Out.WriteLine("\tNo associated transition states.");
                 }
             }
 
@@ -1906,11 +1926,11 @@ void DumpLexeme(char lexeme, int token, int index)
                 {
                     if (null == dtrans.GetAccept())
                     {
-                        Console.Write(" * State " + i + " [nonaccepting]");
+                        Log.Out.Write(" * State " + i + " [nonaccepting]");
                     }
                     else
                     {
-                        Console.Write(" * State " + i
+                        Log.Out.Write(" * State " + i
                                   + " [accepting, line "
                                   + dtrans.GetAccept().line_number
                                   + " <"
@@ -1918,7 +1938,7 @@ void DumpLexeme(char lexeme, int token, int index)
                                   + ">]");
                         if (Spec.NONE != dtrans.GetAnchor())
                         {
-                            Console.Write(" Anchor: "
+                            Log.Out.Write(" Anchor: "
                                   + ((0 != (dtrans.GetAnchor() & Spec.START))
                                      ? "start " : "")
                                   + ((0 != (dtrans.GetAnchor() & Spec.END))
@@ -1932,11 +1952,11 @@ void DumpLexeme(char lexeme, int token, int index)
 
                     if (null == accept)
                     {
-                        Console.Write(" * State " + i + " [nonaccepting]");
+                        Log.Out.Write(" * State " + i + " [nonaccepting]");
                     }
                     else
                     {
-                        Console.Write(" * State " + i
+                        Log.Out.Write(" * State " + i
                                   + " [accepting, line "
                                   + accept.line_number
                                   + " <"
@@ -1944,7 +1964,7 @@ void DumpLexeme(char lexeme, int token, int index)
                                   + ">]");
                         if (Spec.NONE != spec.anchor_array[i])
                         {
-                            Console.Write(" Anchor: "
+                            Log.Out.Write(" Anchor: "
                                   + ((0 != (spec.anchor_array[i] & Spec.START))
                                      ? "start " : "")
                                   + ((0 != (spec.anchor_array[i] & Spec.END))
@@ -1960,24 +1980,24 @@ void DumpLexeme(char lexeme, int token, int index)
                     {
                         if (last_transition != dtrans.GetDTrans(j))
                         {
-                            Console.Write("\n *    goto " + dtrans.GetDTrans(j) + " on ");
+                            Log.Out.Write("\n *    goto " + dtrans.GetDTrans(j) + " on ");
                             chars_printed = 0;
                         }
                         str = interp_int((int)j);
-                        Console.Write(str);
+                        Log.Out.Write(str);
 
                         chars_printed = chars_printed + str.Length;
                         if (56 < chars_printed)
                         {
-                            Console.Write("\n *             ");
+                            Log.Out.Write("\n *             ");
                             chars_printed = 0;
                         }
                         last_transition = dtrans.GetDTrans(j);
                     }
                 }
-                Console.WriteLine("");
+                Log.Out.WriteLine("");
             }
-            Console.WriteLine(" */\n");
+            Log.Out.WriteLine(" */\n");
         }
     }
 }

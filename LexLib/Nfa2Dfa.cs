@@ -21,7 +21,7 @@ namespace LexLib
             make_dtrans(s);
             free_nfa_states(s);
 #if OLD_DUMP_DEBUG
-  Console.WriteLine(s.dfa_states.Count
+  Log.Out.WriteLine(s.dfa_states.Count
 		    + " DFA states in original machine.");
 #endif
             free_dfa_states(s);
@@ -37,7 +37,7 @@ namespace LexLib
             Dfa dfa;
             int nextstate;
 
-            Console.WriteLine("Working on DFA states.");
+            Log.Out.WriteLine("Working on DFA states.");
 
             /* Reference passing type and initializations. */
             s.InitUnmarkedDFA();
@@ -60,7 +60,7 @@ namespace LexLib
                 /* Main loop of DTrans creation. */
                 while (null != (dfa = s.GetNextUnmarkedDFA()))
                 {
-                    Console.Write(".");
+                    Log.Out.Write(".");
 #if DEBUG
                     Utility.assert(!dfa.IsMarked());
 #endif
@@ -109,12 +109,12 @@ namespace LexLib
                     for (int i1 = 0; i1 < dt.GetDTransLength(); i1++)
                         sb1.Append(dt.GetDTrans(i1) + ",");
                     sb1.Append("end\n");
-                    Console.Write(sb1.ToString());
+                    Log.Out.Write(sb1.ToString());
 #endif
                     s.dtrans_list.Add(dt);
                 }
             }
-            Console.WriteLine("");
+            Log.Out.WriteLine("");
         }
 
         /*
@@ -168,7 +168,7 @@ namespace LexLib
             dfa.ClearMarked();
 
 #if OLD_DUMP_DEBUG
-  Console.WriteLine("[Created new dfa_state #"+dfa.GetLabel()+"]");
+  Log.Out.WriteLine("[Created new dfa_state #"+dfa.GetLabel()+"]");
   dfa.dump();
 #endif
 
@@ -176,9 +176,9 @@ namespace LexLib
             s.dfa_sets[dfa.GetNFABit()] = dfa;
 
 #if OLD_DUMP_DEBUG
-  Console.Write("Registering set : ");
+  Log.Out.Write("Registering set : ");
   Print_Set(dfa.GetNFASet());
-  Console.WriteLine("");
+  Log.Out.WriteLine("");
 #endif
 
             return dfa.GetLabel();
@@ -192,7 +192,7 @@ namespace LexLib
             Dfa dfa;
 
 #if OLD_DEBUG
-  Console.Write("Looking for set : ");
+  Log.Out.Write("Looking for set : ");
   Print_Set(bunch.GetNFASet());
   bunch.dump();
 #endif
@@ -200,13 +200,13 @@ namespace LexLib
             if (s.dfa_sets.TryGetValue(bunch.GetNFABit(), out dfa))
             { 
 #if OLD_DUMP_DEBUG
-    Console.WriteLine(" FOUND!");
+    Log.Out.WriteLine(" FOUND!");
 #endif
                 return dfa.GetLabel();
             }
 
 #if OLD_DUMP_DEBUG
-  Console.WriteLine(" NOT FOUND!");
+  Log.Out.WriteLine(" NOT FOUND!");
 #endif
             return NOT_IN_DSTATES;
         }
@@ -224,13 +224,13 @@ public static void Print_Set(ArrayList nfa_set)
 
   if (size == 0)
     {
-    Console.Write("empty ");
+    Log.Out.Write("empty ");
     }
 
   for (elem = 0; elem < size; ++elem)
     {
     Nfa nfa = (Nfa) nfa_set[elem];
-    Console.Write(nfa.GetLabel() + " ");
+    Log.Out.Write(nfa.GetLabel() + " ");
     }
   }
 #endif

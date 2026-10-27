@@ -76,19 +76,19 @@ namespace LexLib
             Accept accept;
             bool tr;
 
-            System.Console.WriteLine("---------------------- Transition Table ----------------------");
+            Log.Out.WriteLine("---------------------- Transition Table ----------------------");
             for (i = 0; i < spec.row_map.Length; ++i)
             {
-                System.Console.Write("State " + i);
+                Log.Out.Write("State " + i);
 
                 accept = (Accept)spec.accept_list[i];
                 if (null == accept)
                 {
-                    System.Console.WriteLine(" [nonaccepting]");
+                    Log.Out.WriteLine(" [nonaccepting]");
                 }
                 else
                 {
-                    System.Console.WriteLine(" [accepting, line "
+                    Log.Out.WriteLine(" [accepting, line "
                           + accept.line_number
                           + " <"
                           + accept.action
@@ -101,7 +101,7 @@ namespace LexLib
                 if (DTrans.F != state)
                 {
                     tr = true;
-                    System.Console.Write("\tgoto " + state.ToString() + " on [");
+                    Log.Out.Write("\tgoto " + state.ToString() + " on [");
                 }
                 for (j = 1; j < spec.dtrans_ncols; j++)
                 {
@@ -110,7 +110,7 @@ namespace LexLib
                     {
                         if (DTrans.F != state)
                         {
-                            System.Console.Write((char)j);
+                            Log.Out.Write((char)j);
                         }
                     }
                     else
@@ -118,23 +118,23 @@ namespace LexLib
                         state = next;
                         if (tr)
                         {
-                            System.Console.WriteLine("]");
+                            Log.Out.WriteLine("]");
                             tr = false;
                         }
                         if (DTrans.F != state)
                         {
                             tr = true;
-                            System.Console.Write("\tgoto " + state.ToString() +
+                            Log.Out.Write("\tgoto " + state.ToString() +
                                   " on [" + Char.ToString((char)j));
                         }
                     }
                 }
                 if (tr)
                 {
-                    System.Console.WriteLine("]");
+                    Log.Out.WriteLine("]");
                 }
             }
-            System.Console.WriteLine("---------------------- Transition Table ----------------------");
+            Log.Out.WriteLine("---------------------- Transition Table ----------------------");
         }
 
         /*

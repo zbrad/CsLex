@@ -44,7 +44,7 @@ namespace CsLexConsole
                             FileShare.Write, 8192)
                          );
 
-            lg = new Gen(instream, outstream);
+            lg = new Gen(instream, outstream, Console.Out);
             try
             {
                 lg.generate();
