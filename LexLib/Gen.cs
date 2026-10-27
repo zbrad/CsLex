@@ -122,10 +122,98 @@ internal class Gen
         {
             generate_core();
         }
+        catch (LexSpecException e) when (!recorded.Contains(e))
+        {
+            /* An error with no recovery point (e.g. in the user code section). */
+            diagnostics.AddRange(e.Diagnostics);
+        }
         finally
         {
             Log.Swap(previous);
         }
+        if (diagnostics.Count > 0)
+            throw new LexSpecException(diagnostics);
+    }
+
+    /* Errors found so far. Parsing recovers at each declaration line and
+       each rule, so a spec with several errors reports them all; nothing is
+       emitted if there are any. */
+    private readonly List<LexDiagnostic> diagnostics = new List<LexDiagnostic>();
+    private readonly HashSet<LexSpecException> recorded = new HashSet<LexSpecException>();
+    private const int MAX_DIAGNOSTICS = 100;
+
+    /*
+     * Function: Record
+     * Description: Adds an error to the diagnostics. Returns false when
+     * parsing can't usefully continue: end of input reached (an unclosed
+     * action or block), or too many errors.
+     */
+    internal bool Record(LexSpecException e)
+    {
+        recorded.Add(e);
+        diagnostics.AddRange(e.Diagnostics);
+        return e.ErrorCode != Error.E_EOF && !ibuf.eof_reached
+            && diagnostics.Count < MAX_DIAGNOSTICS;
+    }
+
+    /*
+     * Function: RecoverRule
+     * Description: After an error in a rule's states or regular expression,
+     * skips to the end of that rule's action, so parsing resumes with the
+     * next rule. The action is the first '{' that follows white space outside
+     * quotes and character classes (a regular expression contains no white
+     * space); packAccept then consumes it, across lines if need be. With no
+     * action on the line, the rest of the line is dropped.
+     */
+    internal bool RecoverRule(LexSpecException e)
+    {
+        if (!Record(e))
+            return false;
+
+        bool quoted = spec.in_quote;
+        bool ccl = spec.in_ccl;
+        bool seen_space = false;
+        int action = -1;
+        for (int i = ibuf.line_index; i < ibuf.line_read; i++)
+        {
+            char c = ibuf.line[i];
+            if (c == '\\')
+                i++;                    /* escaped: skip the next character */
+            else if (quoted)
+                quoted = c != '"';
+            else if (c == '"')
+                quoted = true;
+            else if (ccl)
+                ccl = c != ']';
+            else if (c == '[')
+                ccl = true;
+            else if (Utility.IsSpace(c))
+                seen_space = true;
+            else if (c == '{' && seen_space)
+            {
+                action = i;
+                break;
+            }
+        }
+
+        spec.in_quote = false;
+        spec.in_ccl = false;
+        advance_stop = false;
+        if (action < 0)
+        {
+            ibuf.line_index = ibuf.line_read - 1;   /* at the trailing newline */
+            return true;
+        }
+        ibuf.line_index = action;
+        try
+        {
+            packAccept();
+        }
+        catch (LexSpecException inAction)
+        {
+            return Record(inAction);
+        }
+        return true;
     }
 
     private void generate_core()
@@ -169,6 +257,8 @@ internal class Gen
             Log.Out.WriteLine("Processing third section -- lexical rules.");
         }
         userRules();
+        if (diagnostics.Count > 0)
+            return;
 
 #if DO_DEBUG
 Log.Out.WriteLine("Printing DO_DEBUG header");
@@ -402,223 +492,242 @@ details();
             if (ibuf.line_read == 0)
                 continue;
 
-            if (ibuf.line[0] == '%')
+            try
             {
-                /* Special lex declarations. */
-                if (1 >= ibuf.line_read)
-                {
-                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                    continue;
-                }
-
-                switch (ibuf.line[1])
-                {
-                    case '{':
-                        if (Utility.Compare(ibuf.line, class_code_dir) == 0)
-                        {
-                            spec.class_code = packCode(class_code_dir,
-                                           class_code_end_dir,
-                                           spec.class_code,
-                                           CLASS_CODE);
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'c':
-                        if (Utility.Compare(ibuf.line, char_dir) == 0)
-                        {
-                            /* Set line counting to ON. */
-                            ibuf.line_index = char_dir.Length;
-                            spec.count_chars = true;
-                            break;
-                        }
-                        if (Utility.Compare(ibuf.line, class_dir) == 0)
-                        {
-                            ibuf.line_index = class_dir.Length;
-                            spec.class_name = getName();
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'e':
-                        if (Utility.Compare(ibuf.line, eof_code_dir) == 0)
-                        {
-                            spec.eof_code = packCode(eof_code_dir,
-                                         eof_code_end_dir,
-                                         spec.eof_code,
-                                         EOF_CODE);
-                            break;
-                        }
-                        if (Utility.Compare(ibuf.line, eof_value_code_dir) == 0)
-                        {
-                            spec.eof_value_code = packCode(eof_value_code_dir,
-                                           eof_value_code_end_dir,
-                                           spec.eof_value_code,
-                                           EOF_VALUE_CODE);
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-                    case 'f':
-                        if (Utility.Compare(ibuf.line, function_dir) == 0)
-                        {
-                            /* Set line counting to ON. */
-                            ibuf.line_index = function_dir.Length;
-                            spec.function_name = getName();
-                            break;
-                        }
-                        if (Utility.Compare(ibuf.line, full_dir) == 0)
-                        {
-                            ibuf.line_index = full_dir.Length;
-                            spec.dtrans_ncols = Utility.MAX_EIGHT_BIT + 1;
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'i':
-                        if (Utility.Compare(ibuf.line, integer_dir) == 0)
-                        {
-                            /* Set line counting to ON. */
-                            ibuf.line_index = integer_dir.Length;
-                            spec.integer_type = true;
-                            break;
-                        }
-                        if (Utility.Compare(ibuf.line, intwrap_dir) == 0)
-                        {
-                            /* Set line counting to ON. */
-                            ibuf.line_index = integer_dir.Length;
-                            spec.intwrap_type = true;
-                            break;
-                        }
-                        if (Utility.Compare(ibuf.line, init_code_dir) == 0)
-                        {
-                            spec.init_code = packCode(init_code_dir,
-                                          init_code_end_dir,
-                                          spec.init_code,
-                                          INIT_CODE);
-                            break;
-                        }
-                        if (Utility.Compare(ibuf.line, implements_dir) == 0)
-                        {
-                            ibuf.line_index = implements_dir.Length;
-                            spec.implements_name = getName();
-                            break;
-                        }
-                        if (Utility.Compare(ibuf.line, ignorecase_dir) == 0)
-                        {
-                            /* Set ignorecase to ON. */
-                            ibuf.line_index = ignorecase_dir.Length;
-                            spec.ignorecase = true;
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'l':
-                        if (Utility.Compare(ibuf.line, line_dir) == 0)
-                        {
-                            /* Set line counting to ON. */
-                            ibuf.line_index = line_dir.Length;
-                            spec.count_lines = true;
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'p':
-                        if (Utility.Compare(ibuf.line, public_dir) == 0)
-                        {
-                            /* Set public flag. */
-                            ibuf.line_index = public_dir.Length;
-                            spec.lex_public = true;
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 's':
-                        if (Utility.Compare(ibuf.line, state_dir) == 0)
-                        {
-                            /* Recognize state list. */
-                            ibuf.line_index = state_dir.Length;
-                            saveStates();
-                            break;
-                        }
-                        /* Undefined directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 't':
-                        if (Utility.Compare(ibuf.line, type_dir) == 0)
-                        {
-                            ibuf.line_index = type_dir.Length;
-                            spec.type_name = getName();
-                            break;
-                        }
-                        /* Undefined directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'u':
-                        if (Utility.Compare(ibuf.line, unicode_dir) == 0)
-                        {
-                            ibuf.line_index = unicode_dir.Length;
-                            /* UTF-16 code units; surrogate pairs are two characters. */
-                            spec.dtrans_ncols = Utility.MAX_SIXTEEN_BIT + 1;
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'y':
-                        if (Utility.Compare(ibuf.line, yyeof_dir) == 0)
-                        {
-                            ibuf.line_index = yyeof_dir.Length;
-                            spec.yyeof = true;
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    case 'n':
-                        if (Utility.Compare(ibuf.line, namespace_dir) == 0)
-                        {
-                            ibuf.line_index = namespace_dir.Length;
-                            spec.namespace_name = getName();
-                            break;
-                        }
-                        /* Bad directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-
-                    default:
-                        /* Undefined directive. */
-                        Error.parse_error(Error.E_DIRECT, ibuf.line_number);
-                        break;
-                }
+                declareLine();
             }
-            else
+            catch (LexSpecException e)
             {
-                /* Regular expression macro. */
-                ibuf.line_index = 0;
-                saveMacro();
+                /* Report it and carry on with the next declaration line. */
+                if (!Record(e))
+                    throw;
             }
 #if OLD_DEBUG
 Log.Out.WriteLine("Line number " + ibuf.line_number + ":"); 
 Log.Out.Write(new String(ibuf.line, 0,ibuf.line_read));
 #endif
+        }
+    }
+
+    /*
+     * Function: declareLine
+     * Description: Processes one line of the declarations section: a
+     * directive or a macro definition.
+     */
+    private void declareLine()
+    {
+        if (ibuf.line[0] == '%')
+        {
+            /* Special lex declarations. */
+            if (1 >= ibuf.line_read)
+            {
+                Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                return;
+            }
+
+            switch (ibuf.line[1])
+            {
+                case '{':
+                    if (Utility.Compare(ibuf.line, class_code_dir) == 0)
+                    {
+                        spec.class_code = packCode(class_code_dir,
+                                       class_code_end_dir,
+                                       spec.class_code,
+                                       CLASS_CODE);
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'c':
+                    if (Utility.Compare(ibuf.line, char_dir) == 0)
+                    {
+                        /* Set line counting to ON. */
+                        ibuf.line_index = char_dir.Length;
+                        spec.count_chars = true;
+                        break;
+                    }
+                    if (Utility.Compare(ibuf.line, class_dir) == 0)
+                    {
+                        ibuf.line_index = class_dir.Length;
+                        spec.class_name = getName();
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'e':
+                    if (Utility.Compare(ibuf.line, eof_code_dir) == 0)
+                    {
+                        spec.eof_code = packCode(eof_code_dir,
+                                     eof_code_end_dir,
+                                     spec.eof_code,
+                                     EOF_CODE);
+                        break;
+                    }
+                    if (Utility.Compare(ibuf.line, eof_value_code_dir) == 0)
+                    {
+                        spec.eof_value_code = packCode(eof_value_code_dir,
+                                       eof_value_code_end_dir,
+                                       spec.eof_value_code,
+                                       EOF_VALUE_CODE);
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+                case 'f':
+                    if (Utility.Compare(ibuf.line, function_dir) == 0)
+                    {
+                        /* Set line counting to ON. */
+                        ibuf.line_index = function_dir.Length;
+                        spec.function_name = getName();
+                        break;
+                    }
+                    if (Utility.Compare(ibuf.line, full_dir) == 0)
+                    {
+                        ibuf.line_index = full_dir.Length;
+                        spec.dtrans_ncols = Utility.MAX_EIGHT_BIT + 1;
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'i':
+                    if (Utility.Compare(ibuf.line, integer_dir) == 0)
+                    {
+                        /* Set line counting to ON. */
+                        ibuf.line_index = integer_dir.Length;
+                        spec.integer_type = true;
+                        break;
+                    }
+                    if (Utility.Compare(ibuf.line, intwrap_dir) == 0)
+                    {
+                        /* Set line counting to ON. */
+                        ibuf.line_index = integer_dir.Length;
+                        spec.intwrap_type = true;
+                        break;
+                    }
+                    if (Utility.Compare(ibuf.line, init_code_dir) == 0)
+                    {
+                        spec.init_code = packCode(init_code_dir,
+                                      init_code_end_dir,
+                                      spec.init_code,
+                                      INIT_CODE);
+                        break;
+                    }
+                    if (Utility.Compare(ibuf.line, implements_dir) == 0)
+                    {
+                        ibuf.line_index = implements_dir.Length;
+                        spec.implements_name = getName();
+                        break;
+                    }
+                    if (Utility.Compare(ibuf.line, ignorecase_dir) == 0)
+                    {
+                        /* Set ignorecase to ON. */
+                        ibuf.line_index = ignorecase_dir.Length;
+                        spec.ignorecase = true;
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'l':
+                    if (Utility.Compare(ibuf.line, line_dir) == 0)
+                    {
+                        /* Set line counting to ON. */
+                        ibuf.line_index = line_dir.Length;
+                        spec.count_lines = true;
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'p':
+                    if (Utility.Compare(ibuf.line, public_dir) == 0)
+                    {
+                        /* Set public flag. */
+                        ibuf.line_index = public_dir.Length;
+                        spec.lex_public = true;
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 's':
+                    if (Utility.Compare(ibuf.line, state_dir) == 0)
+                    {
+                        /* Recognize state list. */
+                        ibuf.line_index = state_dir.Length;
+                        saveStates();
+                        break;
+                    }
+                    /* Undefined directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 't':
+                    if (Utility.Compare(ibuf.line, type_dir) == 0)
+                    {
+                        ibuf.line_index = type_dir.Length;
+                        spec.type_name = getName();
+                        break;
+                    }
+                    /* Undefined directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'u':
+                    if (Utility.Compare(ibuf.line, unicode_dir) == 0)
+                    {
+                        ibuf.line_index = unicode_dir.Length;
+                        /* UTF-16 code units; surrogate pairs are two characters. */
+                        spec.dtrans_ncols = Utility.MAX_SIXTEEN_BIT + 1;
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'y':
+                    if (Utility.Compare(ibuf.line, yyeof_dir) == 0)
+                    {
+                        ibuf.line_index = yyeof_dir.Length;
+                        spec.yyeof = true;
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'n':
+                    if (Utility.Compare(ibuf.line, namespace_dir) == 0)
+                    {
+                        ibuf.line_index = namespace_dir.Length;
+                        spec.namespace_name = getName();
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                default:
+                    /* Undefined directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+            }
+        }
+        else
+        {
+            /* Regular expression macro. */
+            ibuf.line_index = 0;
+            saveMacro();
         }
     }
 
@@ -651,6 +760,8 @@ Log.Out.Write(new String(ibuf.line, 0,ibuf.line_read));
 
         MakeNfa.Allocate_BOL_EOF(spec);
         MakeNfa.CreateMachine(this, spec, ibuf);
+        if (diagnostics.Count > 0)
+            return;             /* errors were recorded; generate() reports them */
         SimplifyNfa.simplify(spec);
 
 #if DUMMY
@@ -1602,7 +1713,8 @@ Log.Out.WriteLine("Integer index \""
                 }
                 if (ibuf.GetLine())
                 {
-                    Error.parse_error(Error.E_SYNTAX, ibuf.line_number);
+                    /* The action's closing brace never came. */
+                    Error.parse_error(Error.E_EOF, ibuf.line_number);
                     return null;
                 }
             }

@@ -32,8 +32,10 @@ There are three ways to run the generator, all from the same code:
   string source = LexLib.LexGenerator.Generate(File.ReadAllText("mylexer.lex"));
   ```
 
-  An invalid specification throws `LexSpecException`, which carries the error
-  code and line.
+  An invalid specification throws `LexSpecException`. `TryGenerate` returns a
+  `LexResult` instead, with either the source or every error found. Parsing
+  recovers at each declaration line and each rule, so one bad rule doesn't hide
+  the next. The CLI and the source generator report all the errors.
 
 The packages are built by `dotnet pack` but are not yet published to NuGet.
 

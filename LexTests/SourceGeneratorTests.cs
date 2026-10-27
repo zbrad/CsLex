@@ -61,4 +61,16 @@ public class SourceGeneratorTests
         Assert.Equal(2, d.Location.GetLineSpan().StartLinePosition.Line);   // 0-based: line 3
         Assert.Contains("NOSUCHSTATE", d.GetMessage());
     }
+
+    [Fact]
+    public void Every_spec_error_is_reported()
+    {
+        var (result, _) = Run(new InMemoryText("/src/bad.lex",
+            "%%\n%bogus\n%%\n<NOSUCHSTATE> a { return null; }\nb { return null; }\n"));
+
+        Assert.Empty(result.GeneratedTrees);
+        Assert.Equal(new[] { 1, 3 },   // 0-based lines 2 and 4
+            result.Diagnostics.Select(d => d.Location.GetLineSpan().StartLinePosition.Line).ToArray());
+        Assert.All(result.Diagnostics, d => Assert.Equal("CSLEX001", d.Id));
+    }
 }

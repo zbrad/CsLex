@@ -34,17 +34,18 @@ public sealed class LexSourceGenerator : IIncrementalGenerator
         {
             if (spec.Text == null)
                 return;
-            try
+            var result = LexGenerator.TryGenerate(spec.Text);
+            if (result.Source != null)
             {
-                var source = LexGenerator.Generate(spec.Text);
-                output.AddSource(Path.GetFileNameWithoutExtension(spec.Path) + ".lex.g.cs", source);
+                output.AddSource(Path.GetFileNameWithoutExtension(spec.Path) + ".lex.g.cs", result.Source);
+                return;
             }
-            catch (LexSpecException e)
+            foreach (var d in result.Diagnostics)
             {
-                var line = Math.Max(0, e.Line - 1);
+                var line = Math.Max(0, d.Line - 1);
                 var span = new LinePositionSpan(new LinePosition(line, 0), new LinePosition(line, 0));
                 output.ReportDiagnostic(Diagnostic.Create(SpecError,
-                    Location.Create(spec.Path, default, span), e.Message.Replace("\n", " ")));
+                    Location.Create(spec.Path, default, span), d.Message.Replace("\n", " ")));
             }
         });
     }

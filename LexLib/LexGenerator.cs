@@ -29,6 +29,29 @@ static class LexGenerator
         output.Flush();
     }
 
+    /// <summary>
+    /// Like Generate, but reports errors instead of throwing: the result holds
+    /// the source, or every error found (the parser recovers at each
+    /// declaration line and each rule, so one bad rule doesn't hide the next).
+    /// </summary>
+    public static LexResult TryGenerate(TextReader spec, TextWriter? log = null)
+    {
+        var output = new StringWriter();
+        try
+        {
+            new Gen(spec, output, log).generate();
+        }
+        catch (LexSpecException e)
+        {
+            return new LexResult(null, e.Diagnostics);
+        }
+        return new LexResult(output.ToString(), new LexDiagnostic[0]);
+    }
+
+    /// <summary>TryGenerate from specification text.</summary>
+    public static LexResult TryGenerate(string specText, TextWriter? log = null) =>
+        TryGenerate(new StringReader(specText), log);
+
     /// <summary>Generate from specification text; returns the lexer source.</summary>
     /// <exception cref="LexSpecException">The specification is invalid.</exception>
     public static string Generate(string specText, TextWriter? log = null)

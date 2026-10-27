@@ -100,9 +100,17 @@ confirmed some findings and turned up more. Each fix below has a test in
 - Nullable is on for the CLI, the runtime, and the public API files. File-scoped
   namespaces and `dotnet format` are applied (listed in
   `.git-blame-ignore-revs`).
-- Deviation from section 3: errors are reported only as `LexSpecException`,
-  which stops at the first error. The recommended `LexDiagnostic` list, which
-  would collect several errors, was not built.
+- Deviation from section 3, at first: errors were reported only as
+  `LexSpecException`, stopping at the first one. **Since done:**
+  `LexGenerator.TryGenerate` returns a `LexResult` holding the source or a list
+  of `LexDiagnostic`, and `LexSpecException.Diagnostics` lists every error.
+  - Parsing recovers at each declaration line, and at each rule by skipping to
+    the end of its action, which may span lines. Errors with no recovery point
+    still stop parsing: an action or block left open at end of input, or
+    anything in the user-code section.
+  - An unclosed action is now reported as `E_EOF` rather than `E_SYNTAX`.
+  - The CLI writes its output file only on success.
+  - Tests: `LexTests/DiagnosticsTests.cs`.
 - Not done: the broad C# idiom pass (switch expressions, BCL replacements for
   `Utility`) over the 1999 algorithm code. A from-scratch reimplementation is
   planned, so it wasn't worth the churn.

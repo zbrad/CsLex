@@ -118,36 +118,38 @@ Utility.enter("machine",spec.lexeme,spec.current_token);
 
         start = Alloc.NewNfa(spec);
         p = start;
+        bool first = true;
 
-        states = gen.GetStates();
-
-        /* Begin: Added for states. */
-        spec.current_token = Gen.EOS;
-        gen.Advance();
-        /* End: Added for states. */
-
-        if (Gen.END_OF_INPUT != spec.current_token)
+        /* One rule per iteration. An error in a rule's states or regular
+           expression is recorded and parsing resumes after its action
+           (Gen.RecoverRule), so later rules are still checked. */
+        while (true)
         {
-            p.SetNext(rule());
-            ProcessStates(states, p.GetNext());
-        }
+            Nfa rule_start;
+            try
+            {
+                states = gen.GetStates();
+                /* Begin: Added for states. */
+                spec.current_token = Gen.EOS;
+                gen.Advance();
+                /* End: Added for states. */
+                if (Gen.END_OF_INPUT == spec.current_token)
+                    break;
+                rule_start = rule();
+            }
+            catch (LexSpecException e) when (gen.RecoverRule(e))
+            {
+                continue;
+            }
 
-        while (Gen.END_OF_INPUT != spec.current_token)
-        {
-            /* Make state changes HERE. */
-            states = gen.GetStates();
-
-            /* Begin: Added for states. */
-            gen.Advance();
-            if (Gen.END_OF_INPUT == spec.current_token)
-                break;
-            /* End: Added for states. */
-
-            p.SetSib(Alloc.NewNfa(spec));
-            p = p.GetSib();
-            p.SetNext(rule());
-
-            ProcessStates(states, p.GetNext());
+            if (!first)
+            {
+                p.SetSib(Alloc.NewNfa(spec));
+                p = p.GetSib();
+            }
+            first = false;
+            p.SetNext(rule_start);
+            ProcessStates(states, rule_start);
         }
 
         /*

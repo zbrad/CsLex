@@ -22,21 +22,20 @@ class Program
         }
 
         var outfile = Path.GetFileNameWithoutExtension(filename) + ".cs";
-        Console.WriteLine("Creating output file [" + outfile + "]");
 
-        try
+        LexResult result;
+        using (var input = new StreamReader(filename))
+            result = LexGenerator.TryGenerate(input, Console.Out);
+        if (!result.Success)
         {
-            using (var input = new StreamReader(filename))
-            using (var output = new StreamWriter(outfile))
-            {
-                LexGenerator.Generate(input, output, Console.Out);
-            }
-        }
-        catch (LexSpecException e)
-        {
-            Console.WriteLine(e.Message);
+            foreach (var d in result.Diagnostics)
+                Console.WriteLine(d.Message);
             return 1;
         }
+
+        // Written only on success, so a bad spec doesn't leave a stale or empty file.
+        Console.WriteLine("Creating output file [" + outfile + "]");
+        File.WriteAllText(outfile, result.Source);
         return 0;
     }
 }
