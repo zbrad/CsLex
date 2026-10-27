@@ -2,5 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>LexLib</RootNamespace>
+    <IsPackable>true</IsPackable>
+    <PackageId>CsLex</PackageId>
+    <Description>CsLex lexical analyzer generator library: LexGenerator.Generate turns a lex specification into C# lexer source.</Description>
   </PropertyGroup>
 </Project>
