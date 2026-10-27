@@ -8,7 +8,8 @@ using System.IO;
 namespace CsLexLib
 {
 
-    public delegate T AcceptMethod<T>();
+    // An action returns null (or default) to keep scanning.
+    public delegate T? AcceptMethod<T>();
 
     public abstract class CsLex<T>
     {
@@ -52,24 +53,11 @@ namespace CsLexLib
 
         #region constructors
 
-        public CsLex(TextReader reader) : this()
+        public CsLex(TextReader reader)
         {
             if (reader == null)
                 throw new ApplicationException("Error: Bad input stream initializer.");
             Reader = reader;
-        }
-
-        public CsLex(FileStream instream) : this()
-        {
-            if (instream == null)
-                throw new ApplicationException("Error: Bad input stream initializer.");
-            Reader = new StreamReader(instream);
-        }
-
-        protected virtual void UserInit() { }
-
-        CsLex()
-        {
             this.Buffer = new char[YY_BUFFER_SIZE];
             this.IsAtBol = true;
             this.LexicalState = STATE_YYINITIAL;
@@ -77,6 +65,13 @@ namespace CsLexLib
             ActionInit();
             UserInit();
         }
+
+        public CsLex(FileStream instream)
+            : this(instream == null ? null! : new StreamReader(instream))
+        {
+        }
+
+        protected virtual void UserInit() { }
 
         #endregion
 
@@ -224,13 +219,13 @@ namespace CsLexLib
 
         #endregion
 
-        protected virtual T OnEof()
+        protected virtual T? OnEof()
         {
-            return default(T);
+            return default;
         }
 
         #region driver
-        public T Lex()
+        public T? Lex()
         {
             char yy_lookahead;
             int yy_anchor = YY_NO_ANCHOR;
@@ -304,7 +299,7 @@ namespace CsLexLib
                         var m = AcceptDispatch[yy_last_accept_state];
                         if (m != null)
                         {
-                            T tmp = m();
+                            T? tmp = m();
                             if (default(T) == null)
                             {
                                 if (tmp != null)

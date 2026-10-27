@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("LexTests")]
 
+#nullable enable
+
 namespace LexLib
 {
     /// <summary>
@@ -16,7 +18,7 @@ namespace LexLib
         /// </summary>
         /// <param name="log">Receives progress messages; null discards them.</param>
         /// <exception cref="LexSpecException">The specification is invalid.</exception>
-        public static void Generate(TextReader spec, TextWriter output, TextWriter log = null)
+        public static void Generate(TextReader spec, TextWriter output, TextWriter? log = null)
         {
             new Gen(spec, output, log).generate();
             output.Flush();
@@ -24,7 +26,7 @@ namespace LexLib
 
         /// <summary>Generate from specification text; returns the lexer source.</summary>
         /// <exception cref="LexSpecException">The specification is invalid.</exception>
-        public static string Generate(string specText, TextWriter log = null)
+        public static string Generate(string specText, TextWriter? log = null)
         {
             var output = new StringWriter();
             Generate(new StringReader(specText), output, log);
