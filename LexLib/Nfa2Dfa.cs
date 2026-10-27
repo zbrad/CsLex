@@ -104,7 +104,7 @@ namespace LexLib
                     Utility.assert(s.dtrans_list.Count == dfa.GetLabel());
 #endif
 #if DEBUG
-                    StringBuilder sb1 = new StringBuilder(Properties.Settings.Default.MaxStr);
+                    StringBuilder sb1 = new StringBuilder(Utility.MAX_STR);
                     sb1.Append("Current count = " + s.dtrans_list.Count + "\n");
                     for (int i1 = 0; i1 < dt.GetDTransLength(); i1++)
                         sb1.Append(dt.GetDTrans(i1) + ",");

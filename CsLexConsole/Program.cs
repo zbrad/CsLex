@@ -30,7 +30,7 @@ namespace CsLexConsole
             var instream = new StreamReader(
                             new FileStream(filename, FileMode.Open,
                                    FileAccess.Read, FileShare.Read,
-                                   Properties.Settings.Default.MaxBuf)
+                                   8192)
                             );
             if (instream == null)
             {

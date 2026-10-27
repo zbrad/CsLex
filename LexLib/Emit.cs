@@ -546,7 +546,7 @@ namespace LexLib
         {
             int size = spec.accept_list.Count;
             int lastelem = size - 1;
-            StringBuilder sb = new StringBuilder(Properties.Settings.Default.MaxStr);
+            StringBuilder sb = new StringBuilder(Utility.MAX_STR);
 
             sb.Append(@"
     static int[] yy_acpt = new int[]
@@ -881,7 +881,7 @@ namespace LexLib
             int size = spec.accept_list.Count;
             int bogus_index = -2;
             Accept accept;
-            StringBuilder sb = new StringBuilder(Properties.Settings.Default.MaxStr);
+            StringBuilder sb = new StringBuilder(Utility.MAX_STR);
 
 #if DEBUG
             Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
@@ -978,7 +978,7 @@ namespace LexLib
         {
             int size = spec.accept_list.Count;
             Accept accept;
-            StringBuilder sb = new StringBuilder(Properties.Settings.Default.MaxStr);
+            StringBuilder sb = new StringBuilder(Utility.MAX_STR);
             sb.Append(@"
     #region action methods
 ");

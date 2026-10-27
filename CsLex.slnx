@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="CsLexConsole/CsLexConsole.csproj" />
+  <Project Path="CsLexLib/CsLexLib.csproj" />
+  <Project Path="CsLexLibTest/CsLexLibTest.csproj" />
+  <Project Path="LexLib/LexLib.csproj" />
+  <Project Path="TestOutputSimple/TestOutputSimple.csproj" />
+</Solution>

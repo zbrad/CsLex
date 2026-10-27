@@ -283,7 +283,7 @@ namespace LexLib
             if (prev != null)
                 sb = new StringBuilder(prev, prev.Length * 2); // use any previous text
             else
-                sb = new StringBuilder(Properties.Settings.Default.MaxStr);
+                sb = new StringBuilder(Utility.MAX_STR);
 
             ibuf.line_index = st_dir.Length;
             while (true)
