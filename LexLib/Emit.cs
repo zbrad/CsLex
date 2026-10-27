@@ -212,7 +212,7 @@ print_details();
     delegate {0} AcceptMethod();
     AcceptMethod[] accept_dispatch;
 ",
-            spec.type_name);
+            getDriverType());
 
         /* User specified class code */
         if (null != spec.class_code)
@@ -898,9 +898,7 @@ state_str =
                     AcceptMethod m = accept_dispatch[yy_last_accept_state];
                     if (m != null)
                     {{
-                        {4} tmp = m();
-                        if (tmp != null)
-                            return tmp;
+{4}
                     }}
                 }}
 
@@ -920,19 +918,33 @@ state_str =
     }}
     }}
     #endregion
-", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count, spec.type_name);
+", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count, Accept_Return());
 
         outstream.Write(sb);
     }
 
+    /* The type yylex() and every action return. %integer actions always
+       return a value. %intwrap is the boxed form, as CsLex.md documents
+       ("integer boxed Object", the same as %type object): an action returns
+       a boxed int, or null to keep scanning. */
     string getDriverType()
     {
         string type = spec.type_name;
         if (spec.integer_type)
             type = "int";
         else if (spec.intwrap_type)
-            type = "Int32";
+            type = "object";
         return type;
+    }
+
+    /* Driver code that runs an action m and returns its token. */
+    string Accept_Return()
+    {
+        if (spec.integer_type)
+            return "                        return m();";
+        return "                        " + getDriverType() + " tmp = m();\n"
+            + "                        if (tmp != null)\n"
+            + "                            return tmp;";
     }
 
     /*
@@ -1058,7 +1070,7 @@ state_str =
     {1} Accept_{0}()
     {2}
 ",
-                elem, spec.type_name, accept.action);
+                elem, getDriverType(), accept.action);
             }
         }
 

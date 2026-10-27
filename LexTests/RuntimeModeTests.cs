@@ -60,6 +60,10 @@ public class RuntimeModeTests
         + "<QUOTE> \\\" { yybegin(YYINITIAL); return \"close\"; }\n"
         + "[ \\n] { return null; }\n",
         "ab cd\n\"x y\" ef")]
+    // %integer
+    [InlineData("%%\n%integer\n%%\n[0-9]+ { return int.Parse(yytext()); }\n\" \" { return 0; }\n", "12 345")]
+    // %intwrap: boxed int (object), where null means keep scanning
+    [InlineData("%%\n%intwrap\n%%\n[0-9]+ { return int.Parse(yytext()); }\n\" \" { return null; }\n", "12 345")]
     // %unicode, and input outside a 7-bit alphabet
     [InlineData("%%\n%type string\n%unicode\n%%\n[\\u03b1-\\u03c9]+ { return \"g:\" + yytext(); }\n. { return yytext(); }\n",
         "\u03b1\u03b2-\u20ac")]

@@ -110,4 +110,18 @@ public class KnownBugTests
             "%%\n%type string\n%%\n[a-z]+ { return yytext(); }\n[^a-z] { return \"<\" + yytext() + \">\"; }\n"));
         Assert.Equal("abc\n< >\nde\n", Harness.Run(asm, "abc de"));
     }
+
+    [Fact]
+    public void Integer_and_intwrap_lexers_compile_and_run()
+    {
+        // Since 1999 the actions were typed with %type (Yytoken) while yylex()
+        // returned int, so an %integer spec never compiled.
+        var integer = Harness.Compile(Harness.Generate(
+            "%%\n%integer\n%%\n[0-9]+ { return int.Parse(yytext()); }\n\" \" { return 0; }\n"));
+        Assert.Equal("12\n0\n345\n", Harness.Run(integer, "12 345"));
+
+        var intwrap = Harness.Compile(Harness.Generate(
+            "%%\n%intwrap\n%%\n[0-9]+ { return int.Parse(yytext()); }\n\" \" { return null; }\n"));
+        Assert.Equal("12\n345\n", Harness.Run(intwrap, "12 345"));
+    }
 }
