@@ -88,6 +88,21 @@ confirmed some findings and turned up more. Each fix below has a test in
 | new | **An undefined `{MACRO}` threw `KeyNotFoundException`** instead of the `E_NOMAC` parse error. The 2015 port from `Hashtable` to `Dictionary` kept the indexer, which no longer returns null for a missing key. | Fixed. |
 | new | `%full` sets the alphabet to `MAX_EIGHT_BIT + 1` = 257 columns, because `MAX_EIGHT_BIT` is 256 (in the 1999 source too). That adds one spare column. | Left for phase 3, which replaces the alphabet handling. |
 
+### Status after phase 2
+
+- Library output goes through a per-run writer (`Log.Out`), silent by
+  default; the CLI passes `Console.Out`.
+- `LexGenerator` is the public API (`TextReader`/`TextWriter` or string in,
+  `LexSpecException` out); everything else is internal.
+- `lex/`, `LexLib/LexLib.sln`, `TestOutputSimple`, and `LexTests/TestOutput*.cs`
+  are removed. The original is at tag `original-1999`.
+- Nullable is on for the CLI, the runtime, and the public API files. File-scoped
+  namespaces and `dotnet format` are applied (listed in
+  `.git-blame-ignore-revs`).
+- Not done: the broad C# idiom pass (switch expressions, BCL replacements for
+  `Utility`) over the 1999 algorithm code. A from-scratch reimplementation is
+  planned, so it wasn't worth the churn.
+
 **Token reference.** `LexTests/Golden/*.tokens.txt` are the output of lexers
 built by the *original* 1999 generator (tag `original-1999`) and run on
 `test.txt`. `tools/original-reference/reproduce.sh` regenerates them.
