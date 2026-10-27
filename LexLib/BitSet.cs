@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public sealed class BitSet : IComparable<BitSet>
+    public sealed class BitSet
     {
         /*
          * Sorted array of bit-block offsets.
@@ -186,8 +186,10 @@ namespace LexLib
             ulong[] n_bits = new ulong[n_sum];
             int[] n_offs = new int[n_sum];
             int n_len = 0;
-            int a_len = a.bits.Length;
-            int b_len = b.bits.Length;
+            // Only the first inuse blocks are live; ClearAll() leaves stale
+            // blocks beyond them.
+            int a_len = a.inuse;
+            int b_len = b.inuse;
 
             for (int i = 0, j = 0; i < a_len || j < b_len;)
             {
@@ -229,8 +231,8 @@ namespace LexLib
             }
             else
             {
-                bits = new ulong[4];
-                offs = new int[4];
+                a.bits = new ulong[4];
+                a.offs = new int[4];
                 a.inuse = 0;
             }
         }
@@ -238,12 +240,15 @@ namespace LexLib
         /*
          * Gets the hashcode.
          */
-        const uint prime = 1299827;
         public override int GetHashCode()
         {
-            ulong h = prime;
+            // Zero blocks contribute nothing, matching Equals, which treats a
+            // zero block the same as a missing one. Each block is mixed with
+            // its offset so that block 0 (bits 0-63) counts too.
+            ulong h = 0;
             for (int i = 0; i < inuse; i++)
-                h ^= bits[i] * (ulong)offs[i];
+                if (bits[i] != 0)
+                    h ^= (bits[i] ^ ((ulong)offs[i] * 0x9E3779B97F4A7C15UL)) * 0xBF58476D1CE4E5B9UL;
             return (int)((h >> 32) ^ h);
         }
 
@@ -306,42 +311,6 @@ namespace LexLib
             }
             return true;
         }
-
-        /*
-         * Provides a compare function for a BitSort, for use with Sort or
-         * binarysearch.
-         */
-        public int CompareTo(BitSet other)
-        {
-            if (inuse < other.inuse)
-                return -1;
-            if (inuse > other.inuse)
-                return 1;
-
-            for (int i = 0, j = 0; i < inuse || j < other.inuse;)
-            {
-                if (i < inuse && (j >= other.inuse || offs[i] < other.offs[j]))
-                {
-                    if (bits[i++] != 0)
-                        return -1;
-                }
-                else if (j < other.inuse && (i >= inuse || offs[i] > other.offs[j]))
-                {
-                    if (other.bits[j++] != 0)
-                        return 1;
-                }
-                else
-                { // equal keys
-                    long val = ((long)other.bits[j++]) - ((long)bits[i++]);
-                    if (val < 0)
-                        return -1;
-                    else if (val > 0)
-                        return 1;
-                }
-            }
-            return 0;
-        }
-
 
         class BitSetEnum : IEnumerator<int>
         {

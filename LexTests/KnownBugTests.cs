@@ -54,7 +54,30 @@ namespace LexTests
             Assert.Contains("é", transcript);
         }
 
-        [Fact(Skip = "Bug: BitSet.binop walks array capacity, not inuse, so ClearAll() leaves stale blocks.")]
+        [Fact]
+        public void BitSet_hash_depends_on_low_bits()
+        {
+            var a = new BitSet();
+            a.Set(1, true);
+            var b = new BitSet();
+            b.Set(2, true);
+            Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
+        }
+
+        [Fact]
+        public void BitSet_equal_sets_hash_equal_despite_zero_blocks()
+        {
+            var a = new BitSet();
+            a.Set(3, true);
+            a.Set(200, true);
+            a.Set(200, false);   // leaves an all-zero block behind
+            var b = new BitSet();
+            b.Set(3, true);
+            Assert.True(a.Equals(b));
+            Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        }
+
+        [Fact]
         public void BitSet_and_after_clear_ignores_stale_blocks()
         {
             var a = new BitSet();
