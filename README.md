@@ -39,7 +39,9 @@ There are three ways to run the generator, all from the same code:
 
 The packages are built by `dotnet pack` but are not yet published to NuGet.
 
-Generated lexers have no runtime dependency. By default the alphabet is 7-bit;
+Generated lexers have no runtime dependency by default. With `%runtime`, they
+derive from `CsLex<T>` in the `CsLex.Runtime` package instead, which keeps the
+generated file small. By default the alphabet is 7-bit;
 `%full` selects 8-bit, and `%unicode` selects all UTF-16 code units. A character
 outside the alphabet is reported as unmatched input.
 
@@ -67,7 +69,7 @@ diff. The `*.tokens.txt` goldens are different: they come from the original
 | `LexLib/` | The generator, with `LexGenerator` as its public entry point (package `CsLex`) |
 | `CsLexConsole/` | The `cslex` command-line tool (package `CsLex.Tool`) |
 | `CsLex.SourceGenerator/` | The Roslyn incremental generator (package `CsLex.SourceGenerator`) |
-| `CsLexLib/` | Experimental runtime base class `CsLex<T>`; the generator does not emit code for it yet |
+| `CsLexLib/` | Runtime base class `CsLex<T>` used by lexers generated with `%runtime` (package `CsLex.Runtime`) |
 | `CsLexLibTest/` | A lexer for `simple.lex` written by hand against `CsLex<T>` |
 | `LexTests/` | xUnit tests, sample specs and golden files |
 | `tools/` | The reference and packaging checks |

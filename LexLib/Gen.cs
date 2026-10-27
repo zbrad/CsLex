@@ -444,6 +444,7 @@ details();
     private String class_code_end_dir = "%}";
     private String yyeof_dir = "%yyeof";
     private String public_dir = "%public";
+    private String runtime_dir = "%runtime";
     private String namespace_dir = "%namespace";
 
     /*
@@ -654,6 +655,18 @@ Log.Out.Write(new String(ibuf.line, 0,ibuf.line_read));
                         /* Set public flag. */
                         ibuf.line_index = public_dir.Length;
                         spec.lex_public = true;
+                        break;
+                    }
+                    /* Bad directive. */
+                    Error.parse_error(Error.E_DIRECT, ibuf.line_number);
+                    break;
+
+                case 'r':
+                    if (Utility.Compare(ibuf.line, runtime_dir) == 0)
+                    {
+                        /* Derive from the CsLexLib.CsLex<T> runtime. */
+                        ibuf.line_index = runtime_dir.Length;
+                        spec.runtime = true;
                         break;
                     }
                     /* Bad directive. */

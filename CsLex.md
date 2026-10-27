@@ -446,6 +446,24 @@ The default behavior adds no access specifier to the generated
 class, resulting in the class being visible only from the
 current package.
 
+### Deriving from the Runtime Library
+
+By default the generated class is standalone: it contains its own
+input buffer and matching loop. The `%runtime` directive instead
+generates a class that derives from `CsLexLib.CsLex<T>`, from the
+`CsLex.Runtime` package, which supplies the buffer and the loop.
+The generated class then holds only the tables and the actions.
+
+	%runtime
+
+The project compiling the generated lexer must reference
+`CsLex.Runtime`. Actions are written the same way in both forms:
+`yytext()`, `yylength()`, `yyline`, `yychar`, `yybegin()` and the
+state names are available. The base class also exposes the matched
+text and position as the properties `Text`, `Length`, `Line` and
+`Char`. One difference: in this form, `yyline` and `yychar` are
+always maintained, even without `%line` or `%char`.
+
 ## Regular Expression Rules
 
 The third part of the CsLex specification consists of a series of

@@ -75,6 +75,7 @@ internal class Spec
     public bool count_lines;
     public bool cup_compatible;
     public bool lex_public;
+    public bool runtime;    /* %runtime: derive from CsLexLib.CsLex<T> */
     public bool ignorecase;
 
     public String init_code;
@@ -120,6 +121,7 @@ internal class Spec
         count_chars = false;
         cup_compatible = false;
         lex_public = false;
+        runtime = false;
         yyeof = false;
         ignorecase = false;
 

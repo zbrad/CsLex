@@ -37,7 +37,9 @@ public static class Harness
     {
         var refs = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))
             .Split(Path.PathSeparator)
-            .Select(p => MetadataReference.CreateFromFile(p));
+            .Select(p => MetadataReference.CreateFromFile(p))
+            // The runtime base class, for lexers generated with %runtime.
+            .Append(MetadataReference.CreateFromFile(typeof(CsLexLib.CsLex<>).Assembly.Location));
         var compilation = CSharpCompilation.Create(
             "GeneratedLexer_" + Guid.NewGuid().ToString("N"),
             new[] { CSharpSyntaxTree.ParseText(source) },
@@ -63,7 +65,7 @@ public static class Harness
     /// the same form as the sample specs' own Main() prints them.
     /// </summary>
     public static string Run(Assembly asm, string input,
-        string className = "YyNameSpace.Yylex", string function = "yylex")
+        string className = "YyNameSpace.Yylex", string function = "yylex", int maxTokens = 100000)
     {
         var type = asm.GetType(className, throwOnError: true);
         var ctor = type.GetConstructor(
@@ -78,7 +80,7 @@ public static class Harness
         Console.SetOut(transcript);
         try
         {
-            for (int guard = 0; guard < 100000; guard++)
+            for (int count = 0; count < maxTokens; count++)
             {
                 object token;
                 try
@@ -91,7 +93,8 @@ public static class Harness
                         + ": " + e.InnerException.Message);
                     break;
                 }
-                if (token == null)
+                // null, or YYEOF (-1) from an %integer lexer, ends the input.
+                if (token == null || (token is int eof && eof == -1))
                     break;
                 transcript.WriteLine(token);
             }

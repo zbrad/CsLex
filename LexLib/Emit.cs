@@ -9,7 +9,7 @@ using System.Collections;
 
 namespace LexLib;
 
-internal class Emit
+internal partial class Emit
 {
     /*
      * Member Variables
@@ -156,10 +156,17 @@ print_details();
 #endif
 
         Header();
-        Construct();
-        States();
-        Helpers();
-        Driver();
+        if (spec.runtime)
+        {
+            RuntimeBody();
+        }
+        else
+        {
+            Construct();
+            States();
+            Helpers();
+            Driver();
+        }
         Footer();
 
         outstream.Flush();
@@ -318,15 +325,7 @@ print_details();
         /* Function: yy_do_eof */
         if (spec.eof_code != null)
         {
-            outstream.Write("private bool yy_eof_done = false;\n"
-              + "private void yy_do_eof ()\n"
-              + "  {\n"
-              + "  if (!yy_eof_done)\n"
-              + "    {\n"
-              + "    " + spec.eof_code + "\n"
-              + "    }\n"
-              + "  yy_eof_done = true;\n"
-              + "  }\n\n");
+            outstream.Write(Eof_Helper());
         }
 
         /* Function: yybegin */
@@ -557,7 +556,13 @@ print_details();
             spec_access = "public ";
 
         outstream.Write(spec_access + "class " + spec.class_name);
-        if (spec.implements_name != null)
+        if (spec.runtime)
+        {
+            outstream.Write(" : " + RuntimeBase());
+            if (spec.implements_name != null)
+                outstream.Write(", " + spec.implements_name);
+        }
+        else if (spec.implements_name != null)
         {
             outstream.Write(" : ");
             outstream.Write(spec.implements_name);
@@ -745,6 +750,20 @@ print_details();
     #endregion
 ");
         outstream.Write(sb);
+    }
+
+    /* %eof{ code, run once at the first end of input. */
+    string Eof_Helper()
+    {
+        return "private bool yy_eof_done = false;\n"
+          + "private void yy_do_eof ()\n"
+          + "  {\n"
+          + "  if (!yy_eof_done)\n"
+          + "    {\n"
+          + "    " + spec.eof_code + "\n"
+          + "    }\n"
+          + "  yy_eof_done = true;\n"
+          + "  }\n\n";
     }
 
     string EOF_Test()
@@ -959,11 +978,11 @@ state_str =
         return sb.ToString();
     }
 
-    string User_Init()
+    string User_Init(string header = "void userInit()")
     {
         var s = string.Format(@"
     #region user init
-    void userInit()
+    " + header + @"
     {{
     {0}
     }}
@@ -974,14 +993,15 @@ state_str =
 
 
 
-    private StringBuilder Action_Methods_Init()
+    private StringBuilder Action_Methods_Init(string header = "void actionInit()",
+        string delegate_type = "AcceptMethod")
     {
         int size = spec.accept_list.Count;
         Accept accept;
         StringBuilder tbl = new StringBuilder();
         tbl.Append(@"
     #region action init
-    void actionInit()
+    " + header + @"
     {
 ");
 
@@ -989,7 +1009,7 @@ state_str =
         Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
 #endif
         tbl.Append(@"
-    accept_dispatch = new AcceptMethod[]
+    accept_dispatch = new " + delegate_type + @"[]
         {
 ");
         for (int elem = 0; elem < size; elem++)
@@ -998,8 +1018,8 @@ state_str =
             if (accept != null && accept.action != null)
             {
                 tbl.AppendFormat(@"
-            new AcceptMethod(this.Accept_{0}),
-", elem);
+            new {1}(this.Accept_{0}),
+", elem, delegate_type);
             }
             else
                 tbl.Append(@"
