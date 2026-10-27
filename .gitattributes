@@ -1,0 +1,6 @@
+# Test inputs and golden outputs are compared byte for byte (after the
+# harness normalizes CRLF), and test.txt is lexer input: keep them LF on
+# every platform so Windows checkouts lex the same text.
+LexTests/LexFiles/** text eol=lf
+LexTests/Golden/** text eol=lf
+*.sh text eol=lf
