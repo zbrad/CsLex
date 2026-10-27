@@ -21,8 +21,10 @@ public abstract class CsLex<T>
     public const int YY_START = 1;
     public const int YY_END = 2;
     public const int YY_NO_ANCHOR = 4;
-    public const int YY_BOL = 128;
-    public const int YY_EOF = 129;
+    // Lookahead sentinels; real input is 0 .. Alphabet-1. Their columns are
+    // the last two entries of ColumnMap, as the generator lays it out.
+    public const int YY_BOL = -2;
+    public const int YY_EOF = -1;
     public const int YY_E_INTERNAL = 0;
     public const int YY_E_MATCH = 1;
     #endregion
@@ -81,7 +83,7 @@ public abstract class CsLex<T>
         LexicalState = state;
     }
 
-    public char Advance()
+    public int Advance()
     {
         int next_read;
         int i;
@@ -110,7 +112,7 @@ public abstract class CsLex<T>
             next_read = Reader.Read(Buffer, Read, Buffer.Length - Read);
             if (next_read <= 0)
             {
-                return (char)YY_EOF;
+                return YY_EOF;
             }
 
             Read = Read + next_read;
@@ -127,7 +129,7 @@ public abstract class CsLex<T>
                           Buffer.Length - Read);
             if (next_read <= 0)
             {
-                return (char)YY_EOF;
+                return YY_EOF;
             }
 
             Read = Read + next_read;
@@ -205,6 +207,22 @@ public abstract class CsLex<T>
     }
     #endregion
 
+    /// <summary>Number of input characters the tables cover.</summary>
+    public int Alphabet => ColumnMap.Length - 2;
+
+    /// <summary>Column for a lookahead, or -1 outside the alphabet.</summary>
+    int Column(int c)
+    {
+        var map = ColumnMap;
+        if (c >= 0 && c < map.Length - 2)
+            return map[c];
+        if (c == YY_BOL)
+            return map[map.Length - 2];
+        if (c == YY_EOF)
+            return map[map.Length - 1];
+        return -1;
+    }
+
     #region abstract table defs
     protected abstract AcceptMethod<T>[] AcceptDispatch { get; }
     protected abstract int[] AcceptTable { get; }
@@ -227,7 +245,7 @@ public abstract class CsLex<T>
     #region driver
     public T? Lex()
     {
-        char yy_lookahead;
+        int yy_lookahead;
         int yy_anchor = YY_NO_ANCHOR;
         int yy_state = StatesTable[LexicalState];
         int yy_next_state = YY_NO_STATE;
@@ -249,14 +267,15 @@ public abstract class CsLex<T>
         {
             if (yy_initial && IsAtBol)
             {
-                yy_lookahead = (char)YY_BOL;
+                yy_lookahead = YY_BOL;
             }
             else
             {
                 yy_lookahead = Advance();
             }
 
-            yy_next_state = TransitionTable[RowMap[yy_state], ColumnMap[yy_lookahead]];
+            int yy_col = Column(yy_lookahead);
+            yy_next_state = yy_col < 0 ? YY_F : TransitionTable[RowMap[yy_state], yy_col];
 
             // state_str
 

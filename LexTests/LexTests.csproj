@@ -16,5 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="..\LexLib\LexLib.csproj" />
     <ProjectReference Include="..\CsLexConsole\CsLexConsole.csproj" />
+    <ProjectReference Include="..\CsLexLibTest\CsLexLibTest.csproj" />
   </ItemGroup>
 </Project>
