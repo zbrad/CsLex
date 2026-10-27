@@ -20,7 +20,7 @@ namespace LexTests
             Harness.Compile(Harness.Generate(File.ReadAllText(Harness.LexFile("simple.lex"))));
         }
 
-        [Fact(Skip = "Bug: CLI reads args[1], so a single file argument prints usage.")]
+        [Fact]
         public void Cli_generates_output_for_single_argument()
         {
             var dir = Directory.CreateTempSubdirectory("cslex-cli-").FullName;
@@ -40,7 +40,9 @@ namespace LexTests
                 Console.SetOut(savedOut);
                 Environment.CurrentDirectory = saved;
             }
-            Assert.True(File.Exists(Path.Combine(dir, "simple.cs")));
+            var generated = File.Exists(Path.Combine(dir, "simple.cs"));
+            Directory.Delete(dir, recursive: true);
+            Assert.True(generated);
         }
 
         [Fact(Skip = "Bug: characters above the 7-bit alphabet index past yy_cmap.")]

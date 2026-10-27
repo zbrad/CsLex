@@ -14,13 +14,13 @@ namespace CsLexConsole
         {
             Gen lg;
 
-            if (args.Length < 2)
+            if (args.Length < 1)
             {
                 Console.WriteLine("lex <filename>");
                 return;
             }
 
-            var filename = args[1];
+            var filename = args[0];
             if (!File.Exists(filename))
             {
                 Console.WriteLine("Error: Unable to open input file " + filename + ".");
@@ -32,11 +32,6 @@ namespace CsLexConsole
                                    FileAccess.Read, FileShare.Read,
                                    8192)
                             );
-            if (instream == null)
-            {
-                Console.WriteLine("Error: Unable to open input file " + filename + ".");
-                return;
-            }
 
             var outfile = Path.GetFileNameWithoutExtension(filename) + ".cs";
 
