@@ -1,7 +1,7 @@
 using System;
 
-namespace LexLib
-{
+namespace LexLib;
+
 
 internal class Accept
 {
@@ -48,5 +48,4 @@ internal class Accept
         Log.Out.WriteLine("Line:" + line_number + ":" + action);
     }
 
-}
 }

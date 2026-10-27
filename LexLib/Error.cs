@@ -1,7 +1,7 @@
 using System;
 
-namespace LexLib
-{
+namespace LexLib;
+
 
 internal class Error
 {
@@ -68,7 +68,8 @@ internal class Error
                 return "Special character dash - in character class [...] must\n"
              + "\tbe preceded by start-of-range character.";
             case 19: return "Zero-length regular expression.";
-        };
+        }
+        ;
         return null;
     }
     /*
@@ -87,5 +88,4 @@ internal class Error
             + "Description: " + errmsg(error_code)
             + (detail == null ? "" : " [" + detail + "]"));
     }
-}
 }

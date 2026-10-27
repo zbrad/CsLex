@@ -1,20 +1,19 @@
-namespace LexLib
-{
-    internal class Anchor
-    {
-        /*
-         * Member Variables
-         */
-        public Accept accept;
-        public int anchor;
+namespace LexLib;
 
-        /*
-         * Function: Anchor
-         */
-        Anchor()
-        {
-            accept = null;
-            anchor = Spec.NONE;
-        }
+internal class Anchor
+{
+    /*
+     * Member Variables
+     */
+    public Accept accept;
+    public int anchor;
+
+    /*
+     * Function: Anchor
+     */
+    Anchor()
+    {
+        accept = null;
+        anchor = Spec.NONE;
     }
 }

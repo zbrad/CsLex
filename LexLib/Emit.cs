@@ -1,184 +1,185 @@
-namespace LexLib
+
+/*
+ * Class: Emit
+ */
+using System;
+using System.Text;
+using System.IO;
+using System.Collections;
+
+namespace LexLib;
+
+internal class Emit
 {
     /*
-     * Class: Emit
+     * Member Variables
      */
-    using System;
-    using System.Text;
-    using System.IO;
-    using System.Collections;
+    private Spec spec;
+    private TextWriter outstream;
 
-    internal class Emit
+    /*
+     * Constants: Anchor Types
+     */
+    private const int START = 1;
+    private const int END = 2;
+    private const int NONE = 4;
+
+    /*
+     * Constants
+     */
+    private const bool EDBG = true;
+    private const bool NOT_EDBG = false;
+
+    /*
+     * Function: Emit
+     * Description: Constructor.
+     */
+    public Emit()
     {
-        /*
-         * Member Variables
-         */
-        private Spec spec;
-        private TextWriter outstream;
+        reset();
+    }
 
-        /*
-         * Constants: Anchor Types
-         */
-        private const int START = 1;
-        private const int END = 2;
-        private const int NONE = 4;
+    /*
+     * Function: reset
+     * Description: Clears member variables.
+     */
+    private void reset()
+    {
+        spec = null;
+        outstream = null;
+    }
 
-        /*
-         * Constants
-         */
-        private const bool EDBG = true;
-        private const bool NOT_EDBG = false;
-
-        /*
-         * Function: Emit
-         * Description: Constructor.
-         */
-        public Emit()
-        {
-            reset();
-        }
-
-        /*
-         * Function: reset
-         * Description: Clears member variables.
-         */
-        private void reset()
-        {
-            spec = null;
-            outstream = null;
-        }
-
-        /*
-         * Function: set
-         * Description: Initializes member variables.
-         */
-        private void set(Spec s, TextWriter o)
-        {
+    /*
+     * Function: set
+     * Description: Initializes member variables.
+     */
+    private void set(Spec s, TextWriter o)
+    {
 #if DEBUG
-            Utility.assert(null != s);
-            Utility.assert(null != o);
+        Utility.assert(null != s);
+        Utility.assert(null != o);
 #endif
-            spec = s;
-            outstream = o;
-        }
+        spec = s;
+        outstream = o;
+    }
 
-        /*
-         * Function: print_details
-         * Description: Debugging output.
-         */
-        private void print_details()
+    /*
+     * Function: print_details
+     * Description: Debugging output.
+     */
+    private void print_details()
+    {
+        int i;
+        int j;
+        int next;
+        int state;
+        DTrans dtrans;
+        Accept accept;
+        bool tr;
+
+        Log.Out.WriteLine("---------------------- Transition Table ----------------------");
+        for (i = 0; i < spec.row_map.Length; ++i)
         {
-            int i;
-            int j;
-            int next;
-            int state;
-            DTrans dtrans;
-            Accept accept;
-            bool tr;
+            Log.Out.Write("State " + i);
 
-            Log.Out.WriteLine("---------------------- Transition Table ----------------------");
-            for (i = 0; i < spec.row_map.Length; ++i)
+            accept = (Accept)spec.accept_list[i];
+            if (null == accept)
             {
-                Log.Out.Write("State " + i);
+                Log.Out.WriteLine(" [nonaccepting]");
+            }
+            else
+            {
+                Log.Out.WriteLine(" [accepting, line "
+                      + accept.line_number
+                      + " <"
+                      + accept.action
+                      + ">]");
+            }
+            dtrans = (DTrans)spec.dtrans_list[spec.row_map[i]];
 
-                accept = (Accept)spec.accept_list[i];
-                if (null == accept)
+            tr = false;
+            state = dtrans.GetDTrans(spec.col_map[0]);
+            if (DTrans.F != state)
+            {
+                tr = true;
+                Log.Out.Write("\tgoto " + state.ToString() + " on [");
+            }
+            for (j = 1; j < spec.dtrans_ncols; j++)
+            {
+                next = dtrans.GetDTrans(spec.col_map[j]);
+                if (state == next)
                 {
-                    Log.Out.WriteLine(" [nonaccepting]");
+                    if (DTrans.F != state)
+                    {
+                        Log.Out.Write((char)j);
+                    }
                 }
                 else
                 {
-                    Log.Out.WriteLine(" [accepting, line "
-                          + accept.line_number
-                          + " <"
-                          + accept.action
-                          + ">]");
-                }
-                dtrans = (DTrans)spec.dtrans_list[spec.row_map[i]];
-
-                tr = false;
-                state = dtrans.GetDTrans(spec.col_map[0]);
-                if (DTrans.F != state)
-                {
-                    tr = true;
-                    Log.Out.Write("\tgoto " + state.ToString() + " on [");
-                }
-                for (j = 1; j < spec.dtrans_ncols; j++)
-                {
-                    next = dtrans.GetDTrans(spec.col_map[j]);
-                    if (state == next)
+                    state = next;
+                    if (tr)
                     {
-                        if (DTrans.F != state)
-                        {
-                            Log.Out.Write((char)j);
-                        }
+                        Log.Out.WriteLine("]");
+                        tr = false;
                     }
-                    else
+                    if (DTrans.F != state)
                     {
-                        state = next;
-                        if (tr)
-                        {
-                            Log.Out.WriteLine("]");
-                            tr = false;
-                        }
-                        if (DTrans.F != state)
-                        {
-                            tr = true;
-                            Log.Out.Write("\tgoto " + state.ToString() +
-                                  " on [" + Char.ToString((char)j));
-                        }
+                        tr = true;
+                        Log.Out.Write("\tgoto " + state.ToString() +
+                              " on [" + Char.ToString((char)j));
                     }
-                }
-                if (tr)
-                {
-                    Log.Out.WriteLine("]");
                 }
             }
-            Log.Out.WriteLine("---------------------- Transition Table ----------------------");
+            if (tr)
+            {
+                Log.Out.WriteLine("]");
+            }
         }
+        Log.Out.WriteLine("---------------------- Transition Table ----------------------");
+    }
 
-        /*
-         * Function: Write
-         * Description: High-level access function to module.
-         */
-        public void Write(Spec spec, TextWriter o)
-        {
-            set(spec, o);
+    /*
+     * Function: Write
+     * Description: High-level access function to module.
+     */
+    public void Write(Spec spec, TextWriter o)
+    {
+        set(spec, o);
 
 #if DEBUG
-            Utility.assert(null != spec);
-            Utility.assert(null != o);
+        Utility.assert(null != spec);
+        Utility.assert(null != o);
 #endif
 
 #if OLD_DEBUG
-  print_details();
+print_details();
 #endif
 
-            Header();
-            Construct();
-            States();
-            Helpers();
-            Driver();
-            Footer();
+        Header();
+        Construct();
+        States();
+        Helpers();
+        Driver();
+        Footer();
 
-            outstream.Flush();
-            reset();
-        }
+        outstream.Flush();
+        reset();
+    }
 
-        /*
-         * Function: construct
-         * Description: Emits constructor, member variables,
-         * and constants.
-         */
-        private void Construct()
-        {
+    /*
+     * Function: construct
+     * Description: Emits constructor, member variables,
+     * and constants.
+     */
+    private void Construct()
+    {
 #if DEBUG
-            Utility.assert(null != spec);
-            Utility.assert(null != outstream);
+        Utility.assert(null != spec);
+        Utility.assert(null != outstream);
 #endif
 
-            /* Constants */
-            outstream.Write(@"
+        /* Constants */
+        outstream.Write(@"
 #region constants
     {0}
     const int YY_BUFFER_SIZE = 512;
@@ -192,25 +193,25 @@ namespace LexLib
     const int YY_EOF = {2};
 #endregion
 ",
-        (spec.integer_type || spec.yyeof) ? "public const int YYEOF = -1;" : "",
-        spec.BOL, spec.EOF);
+    (spec.integer_type || spec.yyeof) ? "public const int YYEOF = -1;" : "",
+    spec.BOL, spec.EOF);
 
-            /* type declarations */
-            outstream.WriteLine(@"
+        /* type declarations */
+        outstream.WriteLine(@"
     delegate {0} AcceptMethod();
     AcceptMethod[] accept_dispatch;
 ",
-                spec.type_name);
+            spec.type_name);
 
-            /* User specified class code */
-            if (null != spec.class_code)
-            {
-                outstream.Write(spec.class_code);
-            }
+        /* User specified class code */
+        if (null != spec.class_code)
+        {
+            outstream.Write(spec.class_code);
+        }
 
-            /* Member Variables */
-            outstream.Write(
-                @"
+        /* Member Variables */
+        outstream.Write(
+            @"
     #region private members
     System.IO.TextReader yy_reader;
     int yy_buffer_index;
@@ -225,12 +226,12 @@ namespace LexLib
     #endregion
 ");
 
-            /* Function: first constructor (Reader) */
-            string spec_access = "internal ";
-            if (spec.lex_public)
-                spec_access = "public ";
+        /* Function: first constructor (Reader) */
+        string spec_access = "internal ";
+        if (spec.lex_public)
+            spec_access = "public ";
 
-            outstream.Write(@"
+        outstream.Write(@"
     #region constructors
 
     {0} {1}(System.IO.TextReader reader) : this()
@@ -255,508 +256,508 @@ namespace LexLib
 
     #endregion
 ",
-                spec_access, spec.class_name);
+            spec_access, spec.class_name);
 
-            // action init
-            var actioninit = Action_Methods_Init();
-            outstream.Write(actioninit);
+        // action init
+        var actioninit = Action_Methods_Init();
+        outstream.Write(actioninit);
 
-            // User specified constructor init code
-            var userinit = User_Init();
-            outstream.Write(userinit); 
+        // User specified constructor init code
+        var userinit = User_Init();
+        outstream.Write(userinit);
 
-            var actions = Action_Methods_Body();
-            outstream.Write(actions);
-        }
+        var actions = Action_Methods_Body();
+        outstream.Write(actions);
+    }
 
-        /*
-         * Function: states
-         * Description: Emits constants that serve as lexical states,
-         * including YYINITIAL.
-         */
-        private void States()
-        {
-            foreach (string state in spec.states.Keys)
-            {
-#if DEBUG
-                Utility.assert(null != state);
-#endif
-                outstream.Write(
-                  "private const int " + state + " = " + spec.states[state] + ";\n");
-            }
-
-            outstream.Write("private static int[] yy_state_dtrans = new int[] \n"
-                    + "  { ");
-            for (int index = 0; index < spec.state_dtrans.Length; ++index)
-            {
-                outstream.Write("  " + spec.state_dtrans[index]);
-                if (index < spec.state_dtrans.Length - 1)
-                    outstream.Write(",\n");
-                else
-                    outstream.Write("\n");
-            }
-            outstream.Write("  };\n");
-        }
-
-        /*
-         * Function: Helpers
-         * Description: Emits helper functions, particularly 
-         * error handling and input buffering.
-         */
-        private void Helpers()
+    /*
+     * Function: states
+     * Description: Emits constants that serve as lexical states,
+     * including YYINITIAL.
+     */
+    private void States()
+    {
+        foreach (string state in spec.states.Keys)
         {
 #if DEBUG
-            Utility.assert(null != spec);
-            Utility.assert(null != outstream);
+            Utility.assert(null != state);
 #endif
-            outstream.WriteLine("#region helpers");
-            /* Function: yy_do_eof */
-            if (spec.eof_code != null)
-            {
-                outstream.Write("private bool yy_eof_done = false;\n"
-                  + "private void yy_do_eof ()\n"
-                  + "  {\n"
-                  + "  if (!yy_eof_done)\n"
-                  + "    {\n"
-                  + "    " + spec.eof_code + "\n"
-                  + "    }\n"
-                  + "  yy_eof_done = true;\n"
-                  + "  }\n\n");
-            }
-
-            /* Function: yybegin */
             outstream.Write(
-              "private void yybegin (int state)\n"
+              "private const int " + state + " = " + spec.states[state] + ";\n");
+        }
+
+        outstream.Write("private static int[] yy_state_dtrans = new int[] \n"
+                + "  { ");
+        for (int index = 0; index < spec.state_dtrans.Length; ++index)
+        {
+            outstream.Write("  " + spec.state_dtrans[index]);
+            if (index < spec.state_dtrans.Length - 1)
+                outstream.Write(",\n");
+            else
+                outstream.Write("\n");
+        }
+        outstream.Write("  };\n");
+    }
+
+    /*
+     * Function: Helpers
+     * Description: Emits helper functions, particularly 
+     * error handling and input buffering.
+     */
+    private void Helpers()
+    {
+#if DEBUG
+        Utility.assert(null != spec);
+        Utility.assert(null != outstream);
+#endif
+        outstream.WriteLine("#region helpers");
+        /* Function: yy_do_eof */
+        if (spec.eof_code != null)
+        {
+            outstream.Write("private bool yy_eof_done = false;\n"
+              + "private void yy_do_eof ()\n"
               + "  {\n"
-              + "  yy_lexical_state = state;\n"
+              + "  if (!yy_eof_done)\n"
+              + "    {\n"
+              + "    " + spec.eof_code + "\n"
+              + "    }\n"
+              + "  yy_eof_done = true;\n"
               + "  }\n\n");
+        }
 
-            /* Function: yy_advance */
-            outstream.Write(
-              "private char yy_advance ()\n"
-              + "  {\n"
-              + "  int next_read;\n"
-              + "  int i;\n"
-              + "  int j;\n"
-              + "\n"
-              + "  if (yy_buffer_index < yy_buffer_read)\n"
-              + "    {\n"
-              + "    return yy_buffer[yy_buffer_index++];\n"
-              + "    }\n"
-              + "\n"
-              + "  if (0 != yy_buffer_start)\n"
-              + "    {\n"
-              + "    i = yy_buffer_start;\n"
-              + "    j = 0;\n"
-              + "    while (i < yy_buffer_read)\n"
-              + "      {\n"
-              + "      yy_buffer[j] = yy_buffer[i];\n"
-              + "      i++;\n"
-              + "      j++;\n"
-              + "      }\n"
-              + "    yy_buffer_end = yy_buffer_end - yy_buffer_start;\n"
-              + "    yy_buffer_start = 0;\n"
-              + "    yy_buffer_read = j;\n"
-              + "    yy_buffer_index = j;\n"
-              + "    next_read = yy_reader.Read(yy_buffer,yy_buffer_read,\n"
-              + "                  yy_buffer.Length - yy_buffer_read);\n"
-              //    + "    if (-1 == next_read)\n"
-              + "    if (next_read <= 0)\n"
-              + "      {\n"
-              + "      return (char) YY_EOF;\n"
-              + "      }\n"
-              + "    yy_buffer_read = yy_buffer_read + next_read;\n"
-              + "    }\n"
-              + "  while (yy_buffer_index >= yy_buffer_read)\n"
-              + "    {\n"
-              + "    if (yy_buffer_index >= yy_buffer.Length)\n"
-              + "      {\n"
-              + "      yy_buffer = yy_double(yy_buffer);\n"
-              + "      }\n"
-              + "    next_read = yy_reader.Read(yy_buffer,yy_buffer_read,\n"
-              + "                  yy_buffer.Length - yy_buffer_read);\n"
-              //    + "    if (-1 == next_read)\n"
-              + "    if (next_read <= 0)\n"
-              + "      {\n"
-              + "      return (char) YY_EOF;\n"
-              + "      }\n"
-              + "    yy_buffer_read = yy_buffer_read + next_read;\n"
-              + "    }\n"
-              + "  return yy_buffer[yy_buffer_index++];\n"
-              + "  }\n");
+        /* Function: yybegin */
+        outstream.Write(
+          "private void yybegin (int state)\n"
+          + "  {\n"
+          + "  yy_lexical_state = state;\n"
+          + "  }\n\n");
 
-            /* Function: yy_move_end */
+        /* Function: yy_advance */
+        outstream.Write(
+          "private char yy_advance ()\n"
+          + "  {\n"
+          + "  int next_read;\n"
+          + "  int i;\n"
+          + "  int j;\n"
+          + "\n"
+          + "  if (yy_buffer_index < yy_buffer_read)\n"
+          + "    {\n"
+          + "    return yy_buffer[yy_buffer_index++];\n"
+          + "    }\n"
+          + "\n"
+          + "  if (0 != yy_buffer_start)\n"
+          + "    {\n"
+          + "    i = yy_buffer_start;\n"
+          + "    j = 0;\n"
+          + "    while (i < yy_buffer_read)\n"
+          + "      {\n"
+          + "      yy_buffer[j] = yy_buffer[i];\n"
+          + "      i++;\n"
+          + "      j++;\n"
+          + "      }\n"
+          + "    yy_buffer_end = yy_buffer_end - yy_buffer_start;\n"
+          + "    yy_buffer_start = 0;\n"
+          + "    yy_buffer_read = j;\n"
+          + "    yy_buffer_index = j;\n"
+          + "    next_read = yy_reader.Read(yy_buffer,yy_buffer_read,\n"
+          + "                  yy_buffer.Length - yy_buffer_read);\n"
+          //    + "    if (-1 == next_read)\n"
+          + "    if (next_read <= 0)\n"
+          + "      {\n"
+          + "      return (char) YY_EOF;\n"
+          + "      }\n"
+          + "    yy_buffer_read = yy_buffer_read + next_read;\n"
+          + "    }\n"
+          + "  while (yy_buffer_index >= yy_buffer_read)\n"
+          + "    {\n"
+          + "    if (yy_buffer_index >= yy_buffer.Length)\n"
+          + "      {\n"
+          + "      yy_buffer = yy_double(yy_buffer);\n"
+          + "      }\n"
+          + "    next_read = yy_reader.Read(yy_buffer,yy_buffer_read,\n"
+          + "                  yy_buffer.Length - yy_buffer_read);\n"
+          //    + "    if (-1 == next_read)\n"
+          + "    if (next_read <= 0)\n"
+          + "      {\n"
+          + "      return (char) YY_EOF;\n"
+          + "      }\n"
+          + "    yy_buffer_read = yy_buffer_read + next_read;\n"
+          + "    }\n"
+          + "  return yy_buffer[yy_buffer_index++];\n"
+          + "  }\n");
+
+        /* Function: yy_move_end */
+        outstream.Write(
+            "private void yy_move_end ()\n"
+          + "  {\n"
+          + "  if (yy_buffer_end > yy_buffer_start && \n"
+          + "      '\\n' == yy_buffer[yy_buffer_end-1])\n"
+          + "    yy_buffer_end--;\n"
+          + "  if (yy_buffer_end > yy_buffer_start &&\n"
+          + "      '\\r' == yy_buffer[yy_buffer_end-1])\n"
+          + "    yy_buffer_end--;\n"
+          + "  }\n"
+          );
+
+        /* Function: yy_mark_start */
+        outstream.Write("private bool yy_last_was_cr=false;\n"
+          + "private void yy_mark_start ()\n"
+          + "  {\n");
+        if (spec.count_lines)
+        {
             outstream.Write(
-                "private void yy_move_end ()\n"
-              + "  {\n"
-              + "  if (yy_buffer_end > yy_buffer_start && \n"
-              + "      '\\n' == yy_buffer[yy_buffer_end-1])\n"
-              + "    yy_buffer_end--;\n"
-              + "  if (yy_buffer_end > yy_buffer_start &&\n"
-              + "      '\\r' == yy_buffer[yy_buffer_end-1])\n"
-              + "    yy_buffer_end--;\n"
-              + "  }\n"
+              "  int i;\n"
+              + "  for (i = yy_buffer_start; i < yy_buffer_index; i++)\n"
+              + "    {\n"
+              + "    if (yy_buffer[i] == '\\n' && !yy_last_was_cr)\n"
+              + "      {\n"
+              + "      yyline++;\n"
+              + "      }\n"
+              + "    if (yy_buffer[i] == '\\r')\n"
+              + "      {\n"
+              + "      yyline++;\n"
+              + "      yy_last_was_cr=true;\n"
+              + "      }\n"
+              + "    else\n"
+              + "      {\n"
+              + "      yy_last_was_cr=false;\n"
+              + "      }\n"
+              + "    }\n"
               );
-
-            /* Function: yy_mark_start */
-            outstream.Write("private bool yy_last_was_cr=false;\n"
-              + "private void yy_mark_start ()\n"
-              + "  {\n");
-            if (spec.count_lines)
-            {
-                outstream.Write(
-                  "  int i;\n"
-                  + "  for (i = yy_buffer_start; i < yy_buffer_index; i++)\n"
-                  + "    {\n"
-                  + "    if (yy_buffer[i] == '\\n' && !yy_last_was_cr)\n"
-                  + "      {\n"
-                  + "      yyline++;\n"
-                  + "      }\n"
-                  + "    if (yy_buffer[i] == '\\r')\n"
-                  + "      {\n"
-                  + "      yyline++;\n"
-                  + "      yy_last_was_cr=true;\n"
-                  + "      }\n"
-                  + "    else\n"
-                  + "      {\n"
-                  + "      yy_last_was_cr=false;\n"
-                  + "      }\n"
-                  + "    }\n"
-                  );
-            }
-            if (spec.count_chars)
-            {
-                outstream.Write(
-                  "  yychar = yychar + yy_buffer_index - yy_buffer_start;\n");
-            }
-            outstream.Write(
-              "  yy_buffer_start = yy_buffer_index;\n"
-              + "  }\n");
-
-            /* Function: yy_mark_end */
-            outstream.Write(
-              "private void yy_mark_end ()\n"
-              + "  {\n"
-              + "  yy_buffer_end = yy_buffer_index;\n"
-              + "  }\n");
-
-            /* Function: yy_to_mark */
-            outstream.Write(
-              "private void yy_to_mark ()\n"
-              + "  {\n"
-              + "  yy_buffer_index = yy_buffer_end;\n"
-              + "  yy_at_bol = (yy_buffer_end > yy_buffer_start) &&\n"
-              + "    (yy_buffer[yy_buffer_end-1] == '\\r' ||\n"
-              + "    yy_buffer[yy_buffer_end-1] == '\\n');\n"
-              + "  }\n");
-
-            /* Function: yytext */
-            outstream.Write(
-              "internal string yytext()\n"
-              + "  {\n"
-              + "  return (new string(yy_buffer,\n"
-              + "                yy_buffer_start,\n"
-              + "                yy_buffer_end - yy_buffer_start)\n"
-              + "         );\n"
-              + "  }\n");
-
-            /* Function: yylength */
-            outstream.Write(
-              "private int yylength ()\n"
-              + "  {\n"
-              + "  return yy_buffer_end - yy_buffer_start;\n"
-              + "  }\n");
-
-            /* Function: yy_double */
-            outstream.Write(
-              "private char[] yy_double (char[] buf)\n"
-              + "  {\n"
-              + "  int i;\n"
-              + "  char[] newbuf;\n"
-              + "  newbuf = new char[2*buf.Length];\n"
-              + "  for (i = 0; i < buf.Length; i++)\n"
-              + "    {\n"
-              + "    newbuf[i] = buf[i];\n"
-              + "    }\n"
-              + "  return newbuf;\n"
-              + "  }\n");
-
-            /* Function: yy_error */
-            outstream.Write(
-              "private const int YY_E_INTERNAL = 0;\n"
-              + "private const int YY_E_MATCH = 1;\n"
-              + "private static string[] yy_error_string = new string[]\n"
-              + "  {\n"
-              + "  \"Error: Internal error.\\n\",\n"
-              + "  \"Error: Unmatched input.\\n\"\n"
-              + "  };\n");
-
-            outstream.Write(
-              "private void yy_error (int code,bool fatal)\n"
-              + "  {\n"
-              + "  System.Console.Write(yy_error_string[code]);\n"
-              + "  if (fatal)\n"
-              + "    {\n"
-              + "    throw new System.ApplicationException(\"Fatal Error.\\n\");\n"
-              + "    }\n"
-              + "  }\n");
-
-            //  /* Function: yy_next */
-            //  outstream.Write("\tprivate int yy_next (int current,char lookahead) {\n"
-            //    + "  return yy_nxt[yy_rmap[current],yy_cmap[lookahead]];\n"
-            //    + "\t}\n");
-
-            //  /* Function: yy_accept */
-            //  outstream.Write("\tprivate int yy_accept (int current) {\n");
-            //    + "  return yy_acpt[current];\n"
-            //    + "\t}\n");
-
-            outstream.WriteLine("#endregion");
         }
-
-        /*
-         * Function: Header
-         * Description: Emits class header.
-         */
-        private void Header()
+        if (spec.count_chars)
         {
+            outstream.Write(
+              "  yychar = yychar + yy_buffer_index - yy_buffer_start;\n");
+        }
+        outstream.Write(
+          "  yy_buffer_start = yy_buffer_index;\n"
+          + "  }\n");
+
+        /* Function: yy_mark_end */
+        outstream.Write(
+          "private void yy_mark_end ()\n"
+          + "  {\n"
+          + "  yy_buffer_end = yy_buffer_index;\n"
+          + "  }\n");
+
+        /* Function: yy_to_mark */
+        outstream.Write(
+          "private void yy_to_mark ()\n"
+          + "  {\n"
+          + "  yy_buffer_index = yy_buffer_end;\n"
+          + "  yy_at_bol = (yy_buffer_end > yy_buffer_start) &&\n"
+          + "    (yy_buffer[yy_buffer_end-1] == '\\r' ||\n"
+          + "    yy_buffer[yy_buffer_end-1] == '\\n');\n"
+          + "  }\n");
+
+        /* Function: yytext */
+        outstream.Write(
+          "internal string yytext()\n"
+          + "  {\n"
+          + "  return (new string(yy_buffer,\n"
+          + "                yy_buffer_start,\n"
+          + "                yy_buffer_end - yy_buffer_start)\n"
+          + "         );\n"
+          + "  }\n");
+
+        /* Function: yylength */
+        outstream.Write(
+          "private int yylength ()\n"
+          + "  {\n"
+          + "  return yy_buffer_end - yy_buffer_start;\n"
+          + "  }\n");
+
+        /* Function: yy_double */
+        outstream.Write(
+          "private char[] yy_double (char[] buf)\n"
+          + "  {\n"
+          + "  int i;\n"
+          + "  char[] newbuf;\n"
+          + "  newbuf = new char[2*buf.Length];\n"
+          + "  for (i = 0; i < buf.Length; i++)\n"
+          + "    {\n"
+          + "    newbuf[i] = buf[i];\n"
+          + "    }\n"
+          + "  return newbuf;\n"
+          + "  }\n");
+
+        /* Function: yy_error */
+        outstream.Write(
+          "private const int YY_E_INTERNAL = 0;\n"
+          + "private const int YY_E_MATCH = 1;\n"
+          + "private static string[] yy_error_string = new string[]\n"
+          + "  {\n"
+          + "  \"Error: Internal error.\\n\",\n"
+          + "  \"Error: Unmatched input.\\n\"\n"
+          + "  };\n");
+
+        outstream.Write(
+          "private void yy_error (int code,bool fatal)\n"
+          + "  {\n"
+          + "  System.Console.Write(yy_error_string[code]);\n"
+          + "  if (fatal)\n"
+          + "    {\n"
+          + "    throw new System.ApplicationException(\"Fatal Error.\\n\");\n"
+          + "    }\n"
+          + "  }\n");
+
+        //  /* Function: yy_next */
+        //  outstream.Write("\tprivate int yy_next (int current,char lookahead) {\n"
+        //    + "  return yy_nxt[yy_rmap[current],yy_cmap[lookahead]];\n"
+        //    + "\t}\n");
+
+        //  /* Function: yy_accept */
+        //  outstream.Write("\tprivate int yy_accept (int current) {\n");
+        //    + "  return yy_acpt[current];\n"
+        //    + "\t}\n");
+
+        outstream.WriteLine("#endregion");
+    }
+
+    /*
+     * Function: Header
+     * Description: Emits class header.
+     */
+    private void Header()
+    {
 #if DEBUG
-            Utility.assert(null != spec);
-            Utility.assert(null != outstream);
+        Utility.assert(null != spec);
+        Utility.assert(null != outstream);
 #endif
-            outstream.Write("namespace " + spec.namespace_name + "\n{\n");
-            outstream.Write(spec.usercode);
+        outstream.Write("namespace " + spec.namespace_name + "\n{\n");
+        outstream.Write(spec.usercode);
 
-            outstream.Write("\n\n");
-            string spec_access = "internal ";
-            if (spec.lex_public)
-                spec_access = "public ";
+        outstream.Write("\n\n");
+        string spec_access = "internal ";
+        if (spec.lex_public)
+            spec_access = "public ";
 
-            outstream.Write(spec_access + "class " + spec.class_name);
-            if (spec.implements_name != null)
-            {
-                outstream.Write(" : ");
-                outstream.Write(spec.implements_name);
-            }
-            outstream.Write("\n{\n");
-        }
-
-        StringBuilder Accept_table()
+        outstream.Write(spec_access + "class " + spec.class_name);
+        if (spec.implements_name != null)
         {
-            int size = spec.accept_list.Count;
-            int lastelem = size - 1;
-            StringBuilder sb = new StringBuilder(Utility.MAX_STR);
+            outstream.Write(" : ");
+            outstream.Write(spec.implements_name);
+        }
+        outstream.Write("\n{\n");
+    }
 
-            sb.Append(@"
+    StringBuilder Accept_table()
+    {
+        int size = spec.accept_list.Count;
+        int lastelem = size - 1;
+        StringBuilder sb = new StringBuilder(Utility.MAX_STR);
+
+        sb.Append(@"
     static int[] yy_acpt = new int[]
     {");
-            for (int elem = 0; elem < size; elem++)
-            {
-                sb.AppendFormat(@"
+        for (int elem = 0; elem < size; elem++)
+        {
+            sb.AppendFormat(@"
     /* {0} */ {1}{2}", elem, getAccept(elem), elem < lastelem ? "," : "");
-            }
+        }
 
-            sb.Append(@"
+        sb.Append(@"
     };
 ");
-            return sb;
+        return sb;
+    }
+
+    string getAccept(int elem)
+    {
+        string s = "  YY_NOT_ACCEPT"; // default to NOT
+        Accept accept = (Accept)spec.accept_list[elem];
+        if (accept != null)
+        {
+            bool is_start = ((spec.anchor_array[elem] & Spec.START) != 0);
+            bool is_end = ((spec.anchor_array[elem] & Spec.END) != 0);
+
+            if (is_start && is_end)
+                s = "  YY_START | YY_END";
+            else if (is_start)
+                s = "  YY_START";
+            else if (is_end)
+                s = "  YY_END";
+            else
+                s = "  YY_NO_ANCHOR";
         }
 
-        string getAccept(int elem)
-        {
-            string s = "  YY_NOT_ACCEPT"; // default to NOT
-            Accept accept = (Accept)spec.accept_list[elem];
-            if (accept != null)
-            {
-                bool is_start = ((spec.anchor_array[elem] & Spec.START) != 0);
-                bool is_end = ((spec.anchor_array[elem] & Spec.END) != 0);
+        return s;
+    }
 
-                if (is_start && is_end)
-                    s = "  YY_START | YY_END";
-                else if (is_start)
-                    s = "  YY_START";
-                else if (is_end)
-                    s = "  YY_END";
-                else
-                    s = "  YY_NO_ANCHOR";
-            }
+    StringBuilder CMap_table()
+    {
+        //  int size = spec.col_map.Length;
+        int size = spec.ccls_map.Length;
+        int lastelem = size - 1;
+        StringBuilder sb = new StringBuilder();
 
-            return s;
-        }
-
-        StringBuilder CMap_table()
-        {
-            //  int size = spec.col_map.Length;
-            int size = spec.ccls_map.Length;
-            int lastelem = size - 1;
-            StringBuilder sb = new StringBuilder();
-
-            sb.Append(@"
+        sb.Append(@"
     static int[] yy_cmap = new int[]
     {");
-            for (int i = 0; i < size; i++)
-            {
-                if (i%8 == 0)
-                    sb.AppendFormat(@"
+        for (int i = 0; i < size; i++)
+        {
+            if (i % 8 == 0)
+                sb.AppendFormat(@"
     /* {0}-{1} */ ",
-                i, i + 7);
-                sb.Append(spec.col_map[spec.ccls_map[i]]);
-                if (i < lastelem)
-                    sb.Append(", ");
-            }
-
-            sb.Append(@"
-    };
-");
-            return sb;
+            i, i + 7);
+            sb.Append(spec.col_map[spec.ccls_map[i]]);
+            if (i < lastelem)
+                sb.Append(", ");
         }
 
-        StringBuilder RMap_table()
-        {
-            int size = spec.row_map.Length;
-            int lastelem = size - 1;
+        sb.Append(@"
+    };
+");
+        return sb;
+    }
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append(@"
+    StringBuilder RMap_table()
+    {
+        int size = spec.row_map.Length;
+        int lastelem = size - 1;
+
+        StringBuilder sb = new StringBuilder();
+        sb.Append(@"
     static int[] yy_rmap = new int[]
     {");
 
-            for (int i = 0; i < size; ++i)
-            {
-                if (i % 8 == 0)
-                    sb.AppendFormat(@"
+        for (int i = 0; i < size; ++i)
+        {
+            if (i % 8 == 0)
+                sb.AppendFormat(@"
     /* {0}-{1} */ ", i, i + 7);
-                sb.Append(spec.row_map[i]);
-                if (i < lastelem)
-                    sb.Append(", ");
-            }
-
-            sb.Append(@"
-    };
-");
-            return sb;
+            sb.Append(spec.row_map[i]);
+            if (i < lastelem)
+                sb.Append(", ");
         }
 
-        StringBuilder YYNXT_table()
-        {
-            int size = spec.dtrans_list.Count;
-            int lastelem = size - 1;
-            int lastcol = spec.dtrans_ncols - 1;
-            
-            StringBuilder sb = new StringBuilder();
-            sb.Append(@"
+        sb.Append(@"
+    };
+");
+        return sb;
+    }
+
+    StringBuilder YYNXT_table()
+    {
+        int size = spec.dtrans_list.Count;
+        int lastelem = size - 1;
+        int lastcol = spec.dtrans_ncols - 1;
+
+        StringBuilder sb = new StringBuilder();
+        sb.Append(@"
     static int[,] yy_nxt = new int[,]
     {");
 
-            for (int elem = 0; elem < size; elem++)
-            {
-                DTrans cdt_list = (DTrans)spec.dtrans_list[elem];
+        for (int elem = 0; elem < size; elem++)
+        {
+            DTrans cdt_list = (DTrans)spec.dtrans_list[elem];
 #if DEBUG
-                Utility.assert(spec.dtrans_ncols <= cdt_list.GetDTransLength());
+            Utility.assert(spec.dtrans_ncols <= cdt_list.GetDTransLength());
 #endif
-                sb.Append(@"
+            sb.Append(@"
         {");
-                for (int i = 0; i < spec.dtrans_ncols; i++)
-                {
-                    if (i % 8 == 0)
-                        sb.AppendFormat(@"
+            for (int i = 0; i < spec.dtrans_ncols; i++)
+            {
+                if (i % 8 == 0)
+                    sb.AppendFormat(@"
         /* {0}-{1} */ ", i, i + 7);
-                    sb.Append(cdt_list.GetDTrans(i));
-                    if (i < lastcol)
-                        sb.Append(", ");
-                }
-
-                sb.AppendFormat(@"
-        }}{0}", elem < lastelem ? "," : "");
+                sb.Append(cdt_list.GetDTrans(i));
+                if (i < lastcol)
+                    sb.Append(", ");
             }
 
-            sb.Append(@"
+            sb.AppendFormat(@"
+        }}{0}", elem < lastelem ? "," : "");
+        }
+
+        sb.Append(@"
     };
 ");
 
-            return sb;
-        }
+        return sb;
+    }
 
-        /*
-         * Function: Table
-         * Description: Emits transition table.
-         */
-        private void Table()
-        {
+    /*
+     * Function: Table
+     * Description: Emits transition table.
+     */
+    private void Table()
+    {
 #if DEBUG
-            Utility.assert(null != spec);
-            Utility.assert(null != outstream);
+        Utility.assert(null != spec);
+        Utility.assert(null != outstream);
 #endif
 
-            StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
 
-            sb.Append(@"
+        sb.Append(@"
     #region tables
 ");
-            sb.Append(Accept_table());
-            sb.Append(CMap_table());
-            sb.Append(RMap_table());
-            sb.Append(YYNXT_table());
+        sb.Append(Accept_table());
+        sb.Append(CMap_table());
+        sb.Append(RMap_table());
+        sb.Append(YYNXT_table());
 
-            sb.Append(@"
+        sb.Append(@"
     #endregion
 ");
-            outstream.Write(sb);
-        }
+        outstream.Write(sb);
+    }
 
-        string EOF_Test()
-        {
-            StringBuilder sb = new StringBuilder();
-            if (spec.eof_code != null)
-                sb.AppendLine("        yy_do_eof();");
+    string EOF_Test()
+    {
+        StringBuilder sb = new StringBuilder();
+        if (spec.eof_code != null)
+            sb.AppendLine("        yy_do_eof();");
 
-            if (spec.integer_type)
-                sb.AppendLine("        return YYEOF;");
-            else if (spec.eof_value_code != null)
-                sb.Append(spec.eof_value_code);
-            else
-                sb.AppendLine("        return null;");
-            return sb.ToString();
-        }
+        if (spec.integer_type)
+            sb.AppendLine("        return YYEOF;");
+        else if (spec.eof_value_code != null)
+            sb.Append(spec.eof_value_code);
+        else
+            sb.AppendLine("        return null;");
+        return sb.ToString();
+    }
 
-        /*
-         * Function: Driver
-         * Description: 
-         */
-        void Driver()
-        {
+    /*
+     * Function: Driver
+     * Description: 
+     */
+    void Driver()
+    {
 #if DEBUG
-            Utility.assert(null != spec);
-            Utility.assert(null != outstream);
+        Utility.assert(null != spec);
+        Utility.assert(null != outstream);
 #endif
-            Table();
+        Table();
 
-            //string begin_str = "";
-            //string state_str = "";
+        //string begin_str = "";
+        //string state_str = "";
 #if NOT_EDBG
-    begin_str = "  System.Console.WriteLine(\"Begin\");\n";
-    state_str =
-      "  System.Console.WriteLine(\"\\n\\nCurrent state: \" + yy_state);\n"
-    + "  System.Console.Write(\"Lookahead input: "
-    + "   (\" + yy_lookahead + \")\");\n"
-    + "  if (yy_lookahead < 32)\n"
-    + "    System.Console.WriteLine("
-    + "   \"'^\" + System.Convert.ToChar(yy_lookahead+'A'-1).ToString() + \"'\");\n"
-    + "  else if (yy_lookahead > 127)\n"
-    + "    System.Console.WriteLine("
-    + "   \"'^\" + yy_lookahead + \"'\");\n"
-    + "  else\n"
-    + "    System.Console.WriteLine("
-    + "   \"'\" + yy_lookahead.ToString() + \"'\");\n"
-    + "  System.Console.WriteLine(\"State = \"+ yy_state);\n"
-    + "  System.Console.WriteLine(\"Accepting status = \"+ yy_this_accept);\n"
-      + "  System.Console.WriteLine(\"Last accepting state = \"+ yy_last_accept_state);\n"
-      + "  System.Console.WriteLine(\"Next state = \"+ yy_next_state);\n"
+begin_str = "  System.Console.WriteLine(\"Begin\");\n";
+state_str =
+  "  System.Console.WriteLine(\"\\n\\nCurrent state: \" + yy_state);\n"
++ "  System.Console.Write(\"Lookahead input: "
++ "   (\" + yy_lookahead + \")\");\n"
++ "  if (yy_lookahead < 32)\n"
++ "    System.Console.WriteLine("
++ "   \"'^\" + System.Convert.ToChar(yy_lookahead+'A'-1).ToString() + \"'\");\n"
++ "  else if (yy_lookahead > 127)\n"
++ "    System.Console.WriteLine("
++ "   \"'^\" + yy_lookahead + \"'\");\n"
++ "  else\n"
++ "    System.Console.WriteLine("
++ "   \"'\" + yy_lookahead.ToString() + \"'\");\n"
++ "  System.Console.WriteLine(\"State = \"+ yy_state);\n"
++ "  System.Console.WriteLine(\"Accepting status = \"+ yy_this_accept);\n"
+  + "  System.Console.WriteLine(\"Last accepting state = \"+ yy_last_accept_state);\n"
+  + "  System.Console.WriteLine(\"Next state = \"+ yy_next_state);\n"
 ;
 #endif
 
-            var sb = new StringBuilder();
-            sb.AppendFormat(@"
+        var sb = new StringBuilder();
+        sb.AppendFormat(@"
     #region driver
     public {0} {1}()
     {{
@@ -859,65 +860,65 @@ namespace LexLib
     #endregion
 ", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count, spec.type_name);
 
-            outstream.Write(sb);
-        }
+        outstream.Write(sb);
+    }
 
-        string getDriverType()
-        {
-            string type = spec.type_name;
-            if (spec.integer_type)
-                type = "int";
-            else if (spec.intwrap_type)
-                type = "Int32";
-            return type;
-        }
+    string getDriverType()
+    {
+        string type = spec.type_name;
+        if (spec.integer_type)
+            type = "int";
+        else if (spec.intwrap_type)
+            type = "Int32";
+        return type;
+    }
 
-        /*
-         * Function: Actions
-         * Description:     
-         */
-        private string Actions()
-        {
-            int size = spec.accept_list.Count;
-            int bogus_index = -2;
-            Accept accept;
-            StringBuilder sb = new StringBuilder(Utility.MAX_STR);
+    /*
+     * Function: Actions
+     * Description:     
+     */
+    private string Actions()
+    {
+        int size = spec.accept_list.Count;
+        int bogus_index = -2;
+        Accept accept;
+        StringBuilder sb = new StringBuilder(Utility.MAX_STR);
 
 #if DEBUG
-            Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
+        Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
 #endif
-            string prefix = "";
+        string prefix = "";
 
-            for (int elem = 0; elem < size; elem++)
-            {
-                accept = (Accept)spec.accept_list[elem];
-                if (accept != null)
-                {
-                    sb.Append("        " + prefix + "if (yy_last_accept_state == ");
-                    sb.Append(elem);
-                    sb.Append(")\n");
-                    sb.Append("          { // begin accept action #");
-                    sb.Append(elem);
-                    sb.Append("\n");
-                    sb.Append(accept.action);
-                    sb.Append("\n");
-                    sb.Append("          } // end accept action #");
-                    sb.Append(elem);
-                    sb.Append("\n");
-                    sb.Append("          else if (yy_last_accept_state == ");
-                    sb.Append(bogus_index);
-                    sb.Append(")\n");
-                    sb.Append("            { /* no work */ }\n");
-                    prefix = "else ";
-                    bogus_index--;
-                }
-            }
-            return sb.ToString();
-        }
-
-        string User_Init()
+        for (int elem = 0; elem < size; elem++)
         {
-            var s = string.Format(@"
+            accept = (Accept)spec.accept_list[elem];
+            if (accept != null)
+            {
+                sb.Append("        " + prefix + "if (yy_last_accept_state == ");
+                sb.Append(elem);
+                sb.Append(")\n");
+                sb.Append("          { // begin accept action #");
+                sb.Append(elem);
+                sb.Append("\n");
+                sb.Append(accept.action);
+                sb.Append("\n");
+                sb.Append("          } // end accept action #");
+                sb.Append(elem);
+                sb.Append("\n");
+                sb.Append("          else if (yy_last_accept_state == ");
+                sb.Append(bogus_index);
+                sb.Append(")\n");
+                sb.Append("            { /* no work */ }\n");
+                prefix = "else ";
+                bogus_index--;
+            }
+        }
+        return sb.ToString();
+    }
+
+    string User_Init()
+    {
+        var s = string.Format(@"
     #region user init
     void userInit()
     {{
@@ -925,100 +926,99 @@ namespace LexLib
     }}
     #endregion
 ", spec.init_code == null ? "// no user init" : spec.init_code);
-            return s;
-        }
+        return s;
+    }
 
 
 
-        private StringBuilder Action_Methods_Init()
-        {
-            int size = spec.accept_list.Count;
-            Accept accept;
-            StringBuilder tbl = new StringBuilder();
-            tbl.Append(@"
+    private StringBuilder Action_Methods_Init()
+    {
+        int size = spec.accept_list.Count;
+        Accept accept;
+        StringBuilder tbl = new StringBuilder();
+        tbl.Append(@"
     #region action init
     void actionInit()
     {
 ");
 
 #if DEBUG
-            Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
+        Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
 #endif
-            tbl.Append(@"
+        tbl.Append(@"
     accept_dispatch = new AcceptMethod[]
         {
 ");
-            for (int elem = 0; elem < size; elem++)
+        for (int elem = 0; elem < size; elem++)
+        {
+            accept = (Accept)spec.accept_list[elem];
+            if (accept != null && accept.action != null)
             {
-                accept = (Accept)spec.accept_list[elem];
-                if (accept != null && accept.action != null)
-                {
-                    tbl.AppendFormat(@"
+                tbl.AppendFormat(@"
             new AcceptMethod(this.Accept_{0}),
 ", elem);
-                }
-                else
-                    tbl.Append(@"
+            }
+            else
+                tbl.Append(@"
             null,
 ");
-            }
+        }
 
-            tbl.Append(@"
+        tbl.Append(@"
         };
     }
     #endregion
 ");
-            return tbl;
-        }
+        return tbl;
+    }
 
-        /*
-         * Function: Action_Methods_Body
-         */
-        private StringBuilder Action_Methods_Body()
-        {
-            int size = spec.accept_list.Count;
-            Accept accept;
-            StringBuilder sb = new StringBuilder(Utility.MAX_STR);
-            sb.Append(@"
+    /*
+     * Function: Action_Methods_Body
+     */
+    private StringBuilder Action_Methods_Body()
+    {
+        int size = spec.accept_list.Count;
+        Accept accept;
+        StringBuilder sb = new StringBuilder(Utility.MAX_STR);
+        sb.Append(@"
     #region action methods
 ");
 #if DEBUG
-            Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
+        Utility.assert(spec.accept_list.Count == spec.anchor_array.Length);
 #endif
-            for (int elem = 0; elem < size; elem++)
+        for (int elem = 0; elem < size; elem++)
+        {
+            accept = (Accept)spec.accept_list[elem];
+            if (accept != null && accept.action != null)
             {
-                accept = (Accept)spec.accept_list[elem];
-                if (accept != null && accept.action != null)
-                {
-                    sb.AppendFormat(@"
+                sb.AppendFormat(@"
     {1} Accept_{0}()
     {2}
 ",
-                    elem, spec.type_name, accept.action);
-                }
+                elem, spec.type_name, accept.action);
             }
-
-            sb.Append(@"
-    #endregion
-");
-            return sb;
         }
 
+        sb.Append(@"
+    #endregion
+");
+        return sb;
+    }
 
-        /*
-         * Function: Footer
-         * Description:     
-         */
-        private void Footer()
-        {
+
+    /*
+     * Function: Footer
+     * Description:     
+     */
+    private void Footer()
+    {
 #if DEBUG
-            Utility.assert(null != spec);
-            Utility.assert(null != outstream);
+        Utility.assert(null != spec);
+        Utility.assert(null != outstream);
 #endif
-            outstream.Write(@"
+        outstream.Write(@"
     }
 }
 ");
-        }
     }
 }

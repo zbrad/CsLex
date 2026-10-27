@@ -2,237 +2,236 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 
-namespace LexLib
-{
-    class Nfa2Dfa
-    {
-        /*
-         * Constants
-         */
-        private const int NOT_IN_DSTATES = -1;
+namespace LexLib;
 
-        /*
-         * Function: make_dfa
-         * Description: High-level access function to module.
-         */
-        //public void make_dfa(Gen l, Spec s)
-        public static void MakeDFA(Spec s)
-        {
-            make_dtrans(s);
-            free_nfa_states(s);
+class Nfa2Dfa
+{
+    /*
+     * Constants
+     */
+    private const int NOT_IN_DSTATES = -1;
+
+    /*
+     * Function: make_dfa
+     * Description: High-level access function to module.
+     */
+    //public void make_dfa(Gen l, Spec s)
+    public static void MakeDFA(Spec s)
+    {
+        make_dtrans(s);
+        free_nfa_states(s);
 #if OLD_DUMP_DEBUG
-  Log.Out.WriteLine(s.dfa_states.Count
+Log.Out.WriteLine(s.dfa_states.Count
 		    + " DFA states in original machine.");
 #endif
-            free_dfa_states(s);
-        }
+        free_dfa_states(s);
+    }
 
-        /*
-         * Function: make_dtrans
-         * Description: Creates uncompressed CDTrans transition table.
-         */
-        //private void make_dtrans()
-        private static void make_dtrans(Spec s)
+    /*
+     * Function: make_dtrans
+     * Description: Creates uncompressed CDTrans transition table.
+     */
+    //private void make_dtrans()
+    private static void make_dtrans(Spec s)
+    {
+        Dfa dfa;
+        int nextstate;
+
+        Log.Out.WriteLine("Working on DFA states.");
+
+        /* Reference passing type and initializations. */
+        s.InitUnmarkedDFA();
+
+        /* Allocate mapping array. */
+        int nstates = s.state_rules.Length;
+        s.state_dtrans = new int[nstates];
+
+        for (int istate = 0; istate < nstates; istate++)
         {
-            Dfa dfa;
-            int nextstate;
+            /* Create start state and initialize fields. */
 
-            Log.Out.WriteLine("Working on DFA states.");
+            Bunch bunch = new Bunch(s.state_rules[istate]);
 
-            /* Reference passing type and initializations. */
-            s.InitUnmarkedDFA();
+            bunch.e_closure();
+            add_to_dstates(s, bunch);
 
-            /* Allocate mapping array. */
-            int nstates = s.state_rules.Length;
-            s.state_dtrans = new int[nstates];
+            s.state_dtrans[istate] = s.dtrans_list.Count;
 
-            for (int istate = 0; istate < nstates; istate++)
+            /* Main loop of DTrans creation. */
+            while (null != (dfa = s.GetNextUnmarkedDFA()))
             {
-                /* Create start state and initialize fields. */
+                Log.Out.Write(".");
+#if DEBUG
+                Utility.assert(!dfa.IsMarked());
+#endif
+                /* Get first unmarked node, then mark it. */
+                dfa.SetMarked();
 
-                Bunch bunch = new Bunch(s.state_rules[istate]);
+                /* Allocate new DTrans, then initialize fields. */
+                DTrans dt = new DTrans(s, dfa);
 
-                bunch.e_closure();
-                add_to_dstates(s, bunch);
-
-                s.state_dtrans[istate] = s.dtrans_list.Count;
-
-                /* Main loop of DTrans creation. */
-                while (null != (dfa = s.GetNextUnmarkedDFA()))
+                /* Set dt array for each character transition. */
+                for (int i = 0; i < s.dtrans_ncols; i++)
                 {
-                    Log.Out.Write(".");
+                    /* Create new dfa set by attempting character transition. */
+                    bunch.move(dfa, i);
+                    if (!bunch.IsEmpty())
+                        bunch.e_closure();
 #if DEBUG
-                    Utility.assert(!dfa.IsMarked());
+                    Utility.assert((null == bunch.GetNFASet()
+                             && null == bunch.GetNFABit())
+                            || (null != bunch.GetNFASet()
+                                && null != bunch.GetNFABit()));
 #endif
-                    /* Get first unmarked node, then mark it. */
-                    dfa.SetMarked();
-
-                    /* Allocate new DTrans, then initialize fields. */
-                    DTrans dt = new DTrans(s, dfa);
-
-                    /* Set dt array for each character transition. */
-                    for (int i = 0; i < s.dtrans_ncols; i++)
+                    /* Create new state or set state to empty. */
+                    if (bunch.IsEmpty())
                     {
-                        /* Create new dfa set by attempting character transition. */
-                        bunch.move(dfa, i);
-                        if (!bunch.IsEmpty())
-                            bunch.e_closure();
-#if DEBUG
-                        Utility.assert((null == bunch.GetNFASet()
-                                 && null == bunch.GetNFABit())
-                                || (null != bunch.GetNFASet()
-                                    && null != bunch.GetNFABit()));
-#endif
-                        /* Create new state or set state to empty. */
-                        if (bunch.IsEmpty())
-                        {
-                            nextstate = DTrans.F;
-                        }
-                        else
-                        {
-                            nextstate = in_dstates(s, bunch);
+                        nextstate = DTrans.F;
+                    }
+                    else
+                    {
+                        nextstate = in_dstates(s, bunch);
 
-                            if (nextstate == NOT_IN_DSTATES)
-                                nextstate = add_to_dstates(s, bunch);
-                        }
-#if DEBUG
-                        Utility.assert(nextstate < s.dfa_states.Count);
-#endif
-                        dt.SetDTrans(i, nextstate);
+                        if (nextstate == NOT_IN_DSTATES)
+                            nextstate = add_to_dstates(s, bunch);
                     }
 #if DEBUG
-                    Utility.assert(s.dtrans_list.Count == dfa.GetLabel());
+                    Utility.assert(nextstate < s.dfa_states.Count);
 #endif
-#if DEBUG
-                    StringBuilder sb1 = new StringBuilder(Utility.MAX_STR);
-                    sb1.Append("Current count = " + s.dtrans_list.Count + "\n");
-                    for (int i1 = 0; i1 < dt.GetDTransLength(); i1++)
-                        sb1.Append(dt.GetDTrans(i1) + ",");
-                    sb1.Append("end\n");
-                    Log.Out.Write(sb1.ToString());
-#endif
-                    s.dtrans_list.Add(dt);
+                    dt.SetDTrans(i, nextstate);
                 }
+#if DEBUG
+                Utility.assert(s.dtrans_list.Count == dfa.GetLabel());
+#endif
+#if DEBUG
+                StringBuilder sb1 = new StringBuilder(Utility.MAX_STR);
+                sb1.Append("Current count = " + s.dtrans_list.Count + "\n");
+                for (int i1 = 0; i1 < dt.GetDTransLength(); i1++)
+                    sb1.Append(dt.GetDTrans(i1) + ",");
+                sb1.Append("end\n");
+                Log.Out.Write(sb1.ToString());
+#endif
+                s.dtrans_list.Add(dt);
             }
-            Log.Out.WriteLine("");
         }
+        Log.Out.WriteLine("");
+    }
 
-        /*
-         * Function: free_dfa_states
-         */
-        //private void free_dfa_states()
-        private static void free_dfa_states(Spec s)
-        {
-            s.dfa_states = null;
-            s.dfa_sets = null;
-        }
+    /*
+     * Function: free_dfa_states
+     */
+    //private void free_dfa_states()
+    private static void free_dfa_states(Spec s)
+    {
+        s.dfa_states = null;
+        s.dfa_sets = null;
+    }
 
-        /*
-         * Function: free_nfa_states
-         */
-        private static void free_nfa_states(Spec s)
-        {
-            /* UNDONE: Remove references to nfas from within dfas. */
-            /* UNDONE: Don't free CAccepts. */
-            s.nfa_states = null;
-            s.nfa_start = null;
-            s.state_rules = null;
-        }
+    /*
+     * Function: free_nfa_states
+     */
+    private static void free_nfa_states(Spec s)
+    {
+        /* UNDONE: Remove references to nfas from within dfas. */
+        /* UNDONE: Don't free CAccepts. */
+        s.nfa_states = null;
+        s.nfa_start = null;
+        s.state_rules = null;
+    }
 
-        /*
-         * function: add_to_dstates
-         * Description: Takes as input a CBunch with details of
-         * a dfa state that needs to be created.
-         * 1) Allocates a new dfa state and saves it in the appropriate Spec list
-         * 2) Initializes the fields of the dfa state with the information in the CBunch.
-         * 3) Returns index of new dfa.
-         */
-        private static int add_to_dstates(Spec s, Bunch bunch)
-        {
-            Dfa dfa;
+    /*
+     * function: add_to_dstates
+     * Description: Takes as input a CBunch with details of
+     * a dfa state that needs to be created.
+     * 1) Allocates a new dfa state and saves it in the appropriate Spec list
+     * 2) Initializes the fields of the dfa state with the information in the CBunch.
+     * 3) Returns index of new dfa.
+     */
+    private static int add_to_dstates(Spec s, Bunch bunch)
+    {
+        Dfa dfa;
 
 #if DEBUG
-            Utility.assert(null != bunch.GetNFASet());
-            Utility.assert(null != bunch.GetNFABit());
-            Utility.assert(null != bunch.GetAccept() || Spec.NONE == bunch.GetAnchor());
+        Utility.assert(null != bunch.GetNFASet());
+        Utility.assert(null != bunch.GetNFABit());
+        Utility.assert(null != bunch.GetAccept() || Spec.NONE == bunch.GetAnchor());
 #endif
 
-            /* Allocate, passing Spec so dfa label can be set. */
-            dfa = Alloc.NewDfa(s);
+        /* Allocate, passing Spec so dfa label can be set. */
+        dfa = Alloc.NewDfa(s);
 
-            /* Initialize fields, including the mark field. */
-            dfa.SetNFASet(new List<Nfa>(bunch.GetNFASet()));
-            dfa.SetNFABit(new BitSet(bunch.GetNFABit()));
-            dfa.SetAccept(bunch.GetAccept());
-            dfa.SetAnchor(bunch.GetAnchor());
-            dfa.ClearMarked();
+        /* Initialize fields, including the mark field. */
+        dfa.SetNFASet(new List<Nfa>(bunch.GetNFASet()));
+        dfa.SetNFABit(new BitSet(bunch.GetNFABit()));
+        dfa.SetAccept(bunch.GetAccept());
+        dfa.SetAnchor(bunch.GetAnchor());
+        dfa.ClearMarked();
 
 #if OLD_DUMP_DEBUG
-  Log.Out.WriteLine("[Created new dfa_state #"+dfa.GetLabel()+"]");
-  dfa.dump();
+Log.Out.WriteLine("[Created new dfa_state #"+dfa.GetLabel()+"]");
+dfa.dump();
 #endif
 
-            /* Register dfa state using BitSet in spec Hashtable. */
-            s.dfa_sets[dfa.GetNFABit()] = dfa;
+        /* Register dfa state using BitSet in spec Hashtable. */
+        s.dfa_sets[dfa.GetNFABit()] = dfa;
 
 #if OLD_DUMP_DEBUG
-  Log.Out.Write("Registering set : ");
-  Print_Set(dfa.GetNFASet());
-  Log.Out.WriteLine("");
+Log.Out.Write("Registering set : ");
+Print_Set(dfa.GetNFASet());
+Log.Out.WriteLine("");
 #endif
 
+        return dfa.GetLabel();
+    }
+
+    /*
+     * Function: in_dstates
+     */
+    private static int in_dstates(Spec s, Bunch bunch)
+    {
+        Dfa dfa;
+
+#if OLD_DEBUG
+Log.Out.Write("Looking for set : ");
+Print_Set(bunch.GetNFASet());
+bunch.dump();
+#endif
+
+        if (s.dfa_sets.TryGetValue(bunch.GetNFABit(), out dfa))
+        {
+#if OLD_DUMP_DEBUG
+Log.Out.WriteLine(" FOUND!");
+#endif
             return dfa.GetLabel();
         }
 
-        /*
-         * Function: in_dstates
-         */
-        private static int in_dstates(Spec s, Bunch bunch)
-        {
-            Dfa dfa;
-
-#if OLD_DEBUG
-  Log.Out.Write("Looking for set : ");
-  Print_Set(bunch.GetNFASet());
-  bunch.dump();
-#endif
-
-            if (s.dfa_sets.TryGetValue(bunch.GetNFABit(), out dfa))
-            { 
 #if OLD_DUMP_DEBUG
-    Log.Out.WriteLine(" FOUND!");
+Log.Out.WriteLine(" NOT FOUND!");
 #endif
-                return dfa.GetLabel();
-            }
-
-#if OLD_DUMP_DEBUG
-  Log.Out.WriteLine(" NOT FOUND!");
-#endif
-            return NOT_IN_DSTATES;
-        }
+        return NOT_IN_DSTATES;
+    }
 
 #if OLD_DUMP_DEBUG
 /*
- * function: Print_Set
- */
+* function: Print_Set
+*/
 public static void Print_Set(ArrayList nfa_set)
-  {
-  int size; 
-  int elem;
+{
+int size; 
+int elem;
 
-  size = nfa_set.Count;
+size = nfa_set.Count;
 
-  if (size == 0)
-    {
-    Log.Out.Write("empty ");
-    }
+if (size == 0)
+{
+Log.Out.Write("empty ");
+}
 
-  for (elem = 0; elem < size; ++elem)
-    {
-    Nfa nfa = (Nfa) nfa_set[elem];
-    Log.Out.Write(nfa.GetLabel() + " ");
-    }
-  }
+for (elem = 0; elem < size; ++elem)
+{
+Nfa nfa = (Nfa) nfa_set[elem];
+Log.Out.Write(nfa.GetLabel() + " ");
+}
+}
 #endif
-    }
 }

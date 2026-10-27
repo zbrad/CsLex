@@ -1,0 +1,24 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_using_directive_placement = outside_namespace:warning
+
+[*.{csproj,props,slnx,xml}]
+indent_style = space
+indent_size = 2
+
+[LexTests/Golden/**]
+trim_trailing_whitespace = false
+insert_final_newline = false
+
+[*.md]
+trim_trailing_whitespace = false
