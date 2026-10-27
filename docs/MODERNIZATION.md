@@ -69,6 +69,29 @@ Ordered by impact. Each one gets a reproducing test before its fix.
 6. **`Utility.assert` calls are wrapped in `#if DEBUG`** (the method itself
    isn't), so Debug and Release builds behave differently on invalid input.
 
+### Status after phases 0 and 1 (2026-10-27)
+
+The review above was done by reading code only. Once tests could run, they
+confirmed some findings and turned up more. Each fix below has a test in
+`LexTests/KnownBugTests.cs`.
+
+| # | Finding | Result |
+|---|---|---|
+| 1 | CLI ignores its argument | Confirmed by test, fixed. |
+| 2 | `Environment.Exit` in the library | Fixed: `LexSpecException` (code + line). The ~190 `Console` calls are still there (phase 2). |
+| 3 | Non-ASCII input crashes generated lexers | Confirmed by reading; test skipped until phase 3. |
+| 4 | BitSet stale blocks | **Confirmed by test** (it was only suspected above), fixed. Hash fixed too; the unused `CompareTo` was removed. |
+| 5 | `"i = 0"` debug print | Fixed. |
+| 6 | Debug-only asserts | Not changed. Debug-only assertions are ordinary .NET practice, and the tests run in Debug, so the asserts are exercised. Listing it as a bug was an overstatement. |
+| new | **Generated lexers did not compile.** The 2015 `Emit` rewrite left the driver method without its closing brace, used `TextReader`/`FileStream` without `System.IO` (the 1999 emitter fully qualified them), hard-coded `Yytoken` for the action result, and wrote a stray `/* test */`. | Fixed. The generated lexers now match the original's token output (below). |
+| new | **A rule without a `<STATE>` prefix crashed the generator** with a `NullReferenceException`, because the all-states set was built from a null local. This bug is in the 1999 source too; the sample specs avoid it only because every rule has a prefix. | Fixed. |
+| new | **An undefined `{MACRO}` threw `KeyNotFoundException`** instead of the `E_NOMAC` parse error. The 2015 port from `Hashtable` to `Dictionary` kept the indexer, which no longer returns null for a missing key. | Fixed. |
+| new | `%full` sets the alphabet to `MAX_EIGHT_BIT + 1` = 257 columns, because `MAX_EIGHT_BIT` is 256 (in the 1999 source too). That adds one spare column. | Left for phase 3, which replaces the alphabet handling. |
+
+**Token reference.** `LexTests/Golden/*.tokens.txt` are the output of lexers
+built by the *original* 1999 generator (tag `original-1999`) and run on
+`test.txt`. `tools/original-reference/reproduce.sh` regenerates them.
+
 ## 3. Modernization recommendations
 
 ### Build and project layout
