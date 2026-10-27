@@ -189,8 +189,12 @@ print_details();
     const int YY_START = 1;
     const int YY_END = 2;
     const int YY_NO_ANCHOR = 4;
-    const int YY_BOL = {1};
-    const int YY_EOF = {2};
+    // Lookahead sentinels; real input is 0 .. YY_ALPHABET-1.
+    const int YY_BOL = -2;
+    const int YY_EOF = -1;
+    const int YY_ALPHABET = {1};
+    const int YY_BOL_COL = {1};
+    const int YY_EOF_COL = {2};
 #endregion
 ",
     (spec.integer_type || spec.yyeof) ? "public const int YYEOF = -1;" : "",
@@ -334,7 +338,7 @@ print_details();
 
         /* Function: yy_advance */
         outstream.Write(
-          "private char yy_advance ()\n"
+          "private int yy_advance ()\n"
           + "  {\n"
           + "  int next_read;\n"
           + "  int i;\n"
@@ -364,7 +368,7 @@ print_details();
           //    + "    if (-1 == next_read)\n"
           + "    if (next_read <= 0)\n"
           + "      {\n"
-          + "      return (char) YY_EOF;\n"
+          + "      return YY_EOF;\n"
           + "      }\n"
           + "    yy_buffer_read = yy_buffer_read + next_read;\n"
           + "    }\n"
@@ -379,11 +383,24 @@ print_details();
           //    + "    if (-1 == next_read)\n"
           + "    if (next_read <= 0)\n"
           + "      {\n"
-          + "      return (char) YY_EOF;\n"
+          + "      return YY_EOF;\n"
           + "      }\n"
           + "    yy_buffer_read = yy_buffer_read + next_read;\n"
           + "    }\n"
           + "  return yy_buffer[yy_buffer_index++];\n"
+          + "  }\n\n");
+
+        /* Function: yy_column -- input column, or -1 outside the alphabet */
+        outstream.Write(
+          "private static int yy_column (int c)\n"
+          + "  {\n"
+          + "  if (c >= 0 && c < YY_ALPHABET)\n"
+          + "    return yy_cmap[c];\n"
+          + "  if (c == YY_BOL)\n"
+          + "    return yy_cmap[YY_BOL_COL];\n"
+          + "  if (c == YY_EOF)\n"
+          + "    return yy_cmap[YY_EOF_COL];\n"
+          + "  return -1;\n"
           + "  }\n");
 
         /* Function: yy_move_end */
@@ -589,25 +606,44 @@ print_details();
     {
         //  int size = spec.col_map.Length;
         int size = spec.ccls_map.Length;
-        int lastelem = size - 1;
         StringBuilder sb = new StringBuilder();
 
+        // Run-length encoded as (count, column) pairs: a %unicode alphabet
+        // has 65538 entries, nearly all in a few long runs.
         sb.Append(@"
-    static int[] yy_cmap = new int[]
+    static int[] yy_cmap = yy_unpack(new int[]
     {");
-        for (int i = 0; i < size; i++)
+        int pairs = 0;
+        for (int i = 0; i < size;)
         {
-            if (i % 8 == 0)
+            int col = spec.col_map[spec.ccls_map[i]];
+            int run = 1;
+            while (i + run < size && spec.col_map[spec.ccls_map[i + run]] == col)
+                run++;
+            if (pairs % 8 == 0)
                 sb.AppendFormat(@"
-    /* {0}-{1} */ ",
-            i, i + 7);
-            sb.Append(spec.col_map[spec.ccls_map[i]]);
-            if (i < lastelem)
+    /* {0} */ ", i);
+            sb.AppendFormat("{0}, {1}", run, col);
+            i += run;
+            if (i < size)
                 sb.Append(", ");
+            pairs++;
         }
 
         sb.Append(@"
-    };
+    });
+
+    static int[] yy_unpack(int[] runs)
+    {
+        int size = 0;
+        for (int i = 0; i < runs.Length; i += 2)
+            size += runs[i];
+        int[] map = new int[size];
+        for (int i = 0, k = 0; i < runs.Length; i += 2)
+            for (int n = 0; n < runs[i]; n++)
+                map[k++] = runs[i + 1];
+        return map;
+    }
 ");
         return sb;
     }
@@ -761,7 +797,7 @@ state_str =
     #region driver
     public {0} {1}()
     {{
-    char yy_lookahead;
+    int yy_lookahead;
     int yy_anchor = YY_NO_ANCHOR;
     int yy_state = yy_state_dtrans[yy_lexical_state];
     int yy_next_state = YY_NO_STATE;
@@ -783,14 +819,15 @@ state_str =
     {{
         if (yy_initial && yy_at_bol)
         {{
-            yy_lookahead = (char)YY_BOL;
+            yy_lookahead = YY_BOL;
         }}
         else
         {{
             yy_lookahead = yy_advance();
         }}
 
-        yy_next_state = yy_nxt[yy_rmap[yy_state], yy_cmap[yy_lookahead]];
+        int yy_col = yy_column(yy_lookahead);
+        yy_next_state = yy_col < 0 ? YY_F : yy_nxt[yy_rmap[yy_state], yy_col];
 
         // state_str
 

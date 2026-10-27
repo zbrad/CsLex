@@ -27,9 +27,9 @@ public const bool DO_DEBUG = false;
      */
     public const int INT_MAX = 2147483647;
 
-    /* UNDONE: What about other character values??? */
     public const int MAX_SEVEN_BIT = 127;
-    public const int MAX_EIGHT_BIT = 256;
+    public const int MAX_EIGHT_BIT = 255;
+    public const int MAX_SIXTEEN_BIT = 65535;
 
     /* Initial StringBuilder capacity (was the MaxStr app setting). */
     public const int MAX_STR = 1024;

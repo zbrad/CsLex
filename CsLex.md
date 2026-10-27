@@ -341,8 +341,10 @@ with the return type of **yylex()**.
 
 The default settings support an alphabet of character codes
 between 0 and 127 inclusive. If the generated lexical analyzer
-receives an input character code that falls outside of these
-bounds, the lexer may fail.
+receives an input character code outside the alphabet, it treats
+the character as unmatched input: the current token ends before it,
+and if no rule can match at that point, `yylex()` throws
+"Lexical Error: Unmatched Input."
 
 The `%full` directive can be used to extend this alphabet
 to include all 8-bit values.
@@ -353,16 +355,23 @@ If the `%full` directive is given, CsLex will generate a
 lexical analyzer that supports an alphabet of character codes
 between 0 and 255 inclusive.
 
+The `%unicode` directive extends the alphabet to every 16-bit
+character code, 0 through 65535 (a UTF-16 code unit, the C# `char`).
+
+	%unicode
+
+A character outside the Basic Multilingual Plane arrives as two
+code units (a surrogate pair) and is matched as two characters.
+The generated character map is run-length encoded, so a
+`%unicode` lexer is not much larger than a 7-bit one.
+
 ### Character Format To and From File
 
-Under the status quo, CsLex and the lexical analyzer it generates
-read from and write to Ascii text files, with byte sized
-characters. 
-
-However, to support further extensions on the CsLex
-tool, all internal processing of characters is done using the
-16-bit C# character type, although the full range of 16-bit
-values is not yet supported.
+CsLex and the lexical analyzers it generates read through a
+`TextReader`, so the file's encoding is whatever that reader
+decodes (UTF-8 by default for a `StreamReader`). Characters are
+processed as 16-bit C# `char` values; which of them a lexer accepts
+is set by the alphabet directives above.
 
 ### Specifying the Return Value on End-of-File
 
@@ -511,7 +520,8 @@ are taken to represent themselves. For instance, " " is
 interpreted as a blank space.
 
 The alphabet for CsLex is the Ascii character set, meaning
-character codes between 0 and 127 inclusive.
+character codes between 0 and 127 inclusive, unless `%full`
+(0 to 255) or `%unicode` (0 to 65535) is given.
 
 The following characters are metacharacters, with special
 meanings in CsLex regular expressions.
@@ -561,8 +571,7 @@ The following escape sequences are recognized and expanded:
     <TD>
 	The Unicode character code corresponding to the number
 	formed by four 	hexidecimal digits
-	<i>dddd</i>. <b>The support of Unicode escape
-	sequences of this type is not yet implemented.</b>
+	<i>dddd</i>.
     </TD>
   </TR>
   <TR>

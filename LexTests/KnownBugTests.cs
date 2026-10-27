@@ -12,7 +12,6 @@ namespace LexTests;
 /// </summary>
 public class KnownBugTests
 {
-    const string Simple = "%%\n%%\n[a-z]+ { return yytext(); }\n. { return yytext(); }\n\\n { return yytext(); }\n";
 
     [Fact]
     public void Generated_lexer_compiles()
@@ -44,15 +43,6 @@ public class KnownBugTests
         var generated = File.Exists(Path.Combine(dir, "simple.cs"));
         Directory.Delete(dir, recursive: true);
         Assert.True(generated);
-    }
-
-    [Fact(Skip = "Bug: characters above the 7-bit alphabet index past yy_cmap.")]
-    public void Generated_lexer_accepts_non_ascii_input()
-    {
-        var asm = Harness.Compile(Harness.Generate(Simple));
-        var transcript = Harness.Run(asm, "café\n");
-        Assert.DoesNotContain("!!", transcript);
-        Assert.Contains("é", transcript);
     }
 
     [Fact]

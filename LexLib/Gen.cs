@@ -573,7 +573,8 @@ details();
                         if (Utility.Compare(ibuf.line, unicode_dir) == 0)
                         {
                             ibuf.line_index = unicode_dir.Length;
-                            /* UNDONE: What to do here? */
+                            /* UTF-16 code units; surrogate pairs are two characters. */
+                            spec.dtrans_ncols = Utility.MAX_SIXTEEN_BIT + 1;
                             break;
                         }
                         /* Bad directive. */
@@ -1435,6 +1436,18 @@ Log.Out.WriteLine("Integer index \""
                     {
                         r = (char)(r << 4);
                         r = (char)(r | Utility.hex2bin(ibuf.line[ibuf.line_index]));
+                        ibuf.line_index++;
+                    }
+                    return r;
+
+                case 'U':
+                    /* \uXXXX: up to four hexadecimal digits. */
+                    ibuf.line_index++;
+                    r = (char)0;
+                    for (int digits = 0; digits < 4
+                        && Utility.ishexdigit(ibuf.line[ibuf.line_index]); digits++)
+                    {
+                        r = (char)((r << 4) | Utility.hex2bin(ibuf.line[ibuf.line_index]));
                         ibuf.line_index++;
                     }
                     return r;
