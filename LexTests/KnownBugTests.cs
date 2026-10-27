@@ -76,5 +76,21 @@ namespace LexTests
             Assert.Equal(Error.E_STATE, e.ErrorCode);
             Assert.Equal(3, e.Line);
         }
+
+        [Fact]
+        public void Undefined_macro_reports_instead_of_exiting()
+        {
+            var e = Assert.Throws<LexSpecException>(
+                () => Harness.Generate("%%\n%%\n{NOSUCHMACRO} { return null; }\n"));
+            Assert.Equal(Error.E_NOMAC, e.ErrorCode);
+        }
+
+        [Fact]
+        public void Rule_without_state_prefix_is_accepted()
+        {
+            var asm = Harness.Compile(Harness.Generate(
+                "%%\n%type string\n%%\n[a-z]+ { return yytext(); }\n[^a-z] { return \"<\" + yytext() + \">\"; }\n"));
+            Assert.Equal("abc\n< >\nde\n", Harness.Run(asm, "abc de"));
+        }
     }
 }

@@ -947,7 +947,8 @@ namespace LexLib
 
             if (null == all_states)
             {
-                all_states = new BitSet(states.Count, true);
+                /* A rule with no <STATE> list applies to every declared state. */
+                all_states = new BitSet(spec.states.Count, true);
             }
 
             if (ibuf.line_index < ibuf.line_read)
@@ -1025,7 +1026,7 @@ namespace LexLib
 
             /* Retrieve macro definition. */
             name = new String(ibuf.line, start_name, count_name);
-            def = (String)spec.macros[name];
+            spec.macros.TryGetValue(name, out def);
             if (null == def)
             {
                 /*Error.impos("Undefined macro \"" + name + "\".");*/
