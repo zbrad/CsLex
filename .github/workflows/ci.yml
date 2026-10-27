@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The original-reference check builds the original-1999 tag.
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet build CsLex.slnx -c Release
+      - run: dotnet test CsLex.slnx -c Release --no-build
+      - name: Token goldens still match the 1999 generator
+        if: runner.os == 'Linux'
+        run: tools/original-reference/reproduce.sh
+      - name: Packages work for a consumer
+        if: runner.os == 'Linux'
+        run: tools/package-smoke/run.sh
