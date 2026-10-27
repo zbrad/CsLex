@@ -7,7 +7,7 @@ public class Error
      */
     public static void impos(String message)
     {
-        Console.WriteLine("Lex Error: " + message);
+        throw new LexLib.LexSpecException(-1, 0, "Lex Error: " + message);
     }
 
     /*
@@ -73,11 +73,9 @@ public class Error
      */
     public static void parse_error(int error_code, int line_number)
     {
-        Console.WriteLine("Error: Parse error at line "
-                  + line_number + ".");
-        Console.WriteLine("Description: " + errmsg(error_code));
-        //  throw new ApplicationException("Parse error.");
-        System.Environment.Exit(1);
+        throw new LexLib.LexSpecException(error_code, line_number,
+            "Error: Parse error at line " + line_number + ".\n"
+            + "Description: " + errmsg(error_code));
     }
 }
 

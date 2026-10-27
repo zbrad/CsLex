@@ -50,7 +50,19 @@ namespace CsLexConsole
                          );
 
             lg = new Gen(instream, outstream);
-            lg.generate();
+            try
+            {
+                lg.generate();
+            }
+            catch (LexSpecException e)
+            {
+                Console.WriteLine(e.Message);
+                Environment.ExitCode = 1;
+            }
+            finally
+            {
+                outstream.Dispose();
+            }
         }
     }
 }

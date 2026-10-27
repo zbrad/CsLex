@@ -68,10 +68,13 @@ namespace LexTests
             Assert.False(a.Get(9 * 64), "stale block from before ClearAll() leaked into And()");
         }
 
-        [Fact(Skip = "Bug: a spec error calls Environment.Exit(1), which would end the test host.")]
+        [Fact]
         public void Parse_error_reports_instead_of_exiting()
         {
-            Assert.ThrowsAny<Exception>(() => Harness.Generate("%%\n%%\n<NOSUCHSTATE> a { return null; }\n"));
+            var e = Assert.Throws<LexSpecException>(
+                () => Harness.Generate("%%\n%%\n<NOSUCHSTATE> a { return null; }\n"));
+            Assert.Equal(Error.E_STATE, e.ErrorCode);
+            Assert.Equal(3, e.Line);
         }
     }
 }
