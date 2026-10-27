@@ -1,0 +1,13 @@
+<!-- Project file used by reproduce.sh for both the 1999 generator and the
+     lexers it emits. Kept as .txt so the solution build does not pick it up. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- 1999 code: obsolete IHashCodeProvider, unused locals, unreachable code. -->
+    <NoWarn>CS0618;CS0162;CS0168;CS0219;CS0414;CS0169</NoWarn>
+    <ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>
+  </PropertyGroup>
+</Project>

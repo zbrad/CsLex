@@ -118,14 +118,18 @@ namespace LexTests
 
         /// <summary>
         /// Compare against Golden/&lt;name&gt;. Set CSLEX_UPDATE_GOLDEN=1 to
-        /// rewrite the checked-in golden file instead of failing.
+        /// rewrite the checked-in golden file instead of failing (except
+        /// token transcripts, which only tools/original-reference writes).
         /// </summary>
         public static void AssertGolden(string name, string actual,
             [CallerFilePath] string callerFile = "")
         {
             actual = actual.Replace("\r\n", "\n");
             var sourcePath = Path.Combine(Path.GetDirectoryName(callerFile), "Golden", name);
-            if (Environment.GetEnvironmentVariable("CSLEX_UPDATE_GOLDEN") == "1")
+            // *.tokens.txt come from the original generator, never from the
+            // code under test; see tools/original-reference.
+            if (Environment.GetEnvironmentVariable("CSLEX_UPDATE_GOLDEN") == "1"
+                && !name.EndsWith(".tokens.txt", StringComparison.Ordinal))
             {
                 File.WriteAllText(sourcePath, actual);
                 return;
