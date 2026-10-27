@@ -1,0 +1,18 @@
+Illegal character: <t>
+Illegal character: <e>
+Illegal character: <s>
+Illegal character: <t>
+Illegal character: <1>
+Illegal character: <;>
+Parsed Newline.
+Comment_Begin = [/*]
+Comment_Text = [ comment1 ]
+Comment_End = [*/]
+Parsed Newline.
+Illegal character: <t>
+Illegal character: <e>
+Illegal character: <s>
+Illegal character: <t>
+Illegal character: <2>
+Illegal character: <;>
+Parsed Newline.

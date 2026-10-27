@@ -1,0 +1,4 @@
+Token #43: test1 (line 0)
+Token #2: ; (line 0)
+Token #43: test2 (line 2)
+Token #2: ; (line 2)
