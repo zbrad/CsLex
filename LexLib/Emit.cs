@@ -212,7 +212,7 @@ namespace LexLib
             outstream.Write(
                 @"
     #region private members
-    TextReader yy_reader;
+    System.IO.TextReader yy_reader;
     int yy_buffer_index;
     int yy_buffer_read;
     int yy_buffer_start;
@@ -233,18 +233,18 @@ namespace LexLib
             outstream.Write(@"
     #region constructors
 
-    {0} {1}(TextReader reader) : this()
+    {0} {1}(System.IO.TextReader reader) : this()
     {{
         if (reader == null)
-            throw new ApplicationException(""Error: Bad input stream initializer."");
+            throw new System.ApplicationException(""Error: Bad input stream initializer."");
         yy_reader = reader;
     }}
 
-    {0} {1}(FileStream instream) : this()
+    {0} {1}(System.IO.FileStream instream) : this()
     {{
         if (instream == null)
-            throw new ApplicationException(""Error: Bad input stream initializer."");
-        yy_reader = new StreamReader(instream);
+            throw new System.ApplicationException(""Error: Bad input stream initializer."");
+        yy_reader = new System.IO.StreamReader(instream);
     }}
 
     {1}()
@@ -526,7 +526,6 @@ namespace LexLib
 #endif
             outstream.Write("namespace " + spec.namespace_name + "\n{\n");
             outstream.Write(spec.usercode);
-            outstream.Write("/* test */\n");
 
             outstream.Write("\n\n");
             string spec_access = "internal ";
@@ -815,7 +814,7 @@ namespace LexLib
         {{
             if (YY_NO_STATE == yy_last_accept_state)
             {{
-                throw new ApplicationException(""Lexical Error: Unmatched Input."");
+                throw new System.ApplicationException(""Lexical Error: Unmatched Input."");
             }}
             else
             {{
@@ -836,7 +835,7 @@ namespace LexLib
                     AcceptMethod m = accept_dispatch[yy_last_accept_state];
                     if (m != null)
                     {{
-                        Yytoken tmp = m(); // spec.type_name
+                        {4} tmp = m();
                         if (tmp != null)
                             return tmp;
                     }}
@@ -856,8 +855,9 @@ namespace LexLib
             }}
         }}
     }}
+    }}
     #endregion
-", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count);
+", getDriverType(), spec.function_name, EOF_Test(), spec.accept_list.Count, spec.type_name);
 
             outstream.Write(sb);
         }

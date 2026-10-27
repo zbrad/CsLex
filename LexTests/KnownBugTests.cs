@@ -14,7 +14,7 @@ namespace LexTests
     {
         const string Simple = "%%\n%%\n[a-z]+ { return yytext(); }\n. { return yytext(); }\n\\n { return yytext(); }\n";
 
-        [Fact(Skip = "Bug: emitted lexer does not compile (missing using System.IO, unbalanced brace).")]
+        [Fact]
         public void Generated_lexer_compiles()
         {
             Harness.Compile(Harness.Generate(File.ReadAllText(Harness.LexFile("simple.lex"))));

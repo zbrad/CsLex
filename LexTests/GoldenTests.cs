@@ -20,7 +20,7 @@ namespace LexTests
 
         // Golden tokens are the output of lexers built by the original 1999
         // generator (lex/src) on .NET 10, so this pins the original behavior.
-        [Theory(Skip = "Bug: emitted lexer does not compile; see KnownBugTests.")]
+        [Theory]
         [InlineData("simple")]
         [InlineData("sample")]
         public void Generated_lexer_matches_golden_tokens(string spec)

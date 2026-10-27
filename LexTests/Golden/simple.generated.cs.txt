@@ -52,7 +52,6 @@ public override String ToString()
     + " (line "+ m_line + ")";
   }
 }
-/* test */
 
 
 internal class Yylex
@@ -76,7 +75,7 @@ internal class Yylex
 
 
     #region private members
-    TextReader yy_reader;
+    System.IO.TextReader yy_reader;
     int yy_buffer_index;
     int yy_buffer_read;
     int yy_buffer_start;
@@ -90,18 +89,18 @@ internal class Yylex
 
     #region constructors
 
-    internal  Yylex(TextReader reader) : this()
+    internal  Yylex(System.IO.TextReader reader) : this()
     {
         if (reader == null)
-            throw new ApplicationException("Error: Bad input stream initializer.");
+            throw new System.ApplicationException("Error: Bad input stream initializer.");
         yy_reader = reader;
     }
 
-    internal  Yylex(FileStream instream) : this()
+    internal  Yylex(System.IO.FileStream instream) : this()
     {
         if (instream == null)
-            throw new ApplicationException("Error: Bad input stream initializer.");
-        yy_reader = new StreamReader(instream);
+            throw new System.ApplicationException("Error: Bad input stream initializer.");
+        yy_reader = new System.IO.StreamReader(instream);
     }
 
     Yylex()
@@ -555,7 +554,7 @@ private void yy_error (int code,bool fatal)
         {
             if (YY_NO_STATE == yy_last_accept_state)
             {
-                throw new ApplicationException("Lexical Error: Unmatched Input.");
+                throw new System.ApplicationException("Lexical Error: Unmatched Input.");
             }
             else
             {
@@ -576,7 +575,7 @@ private void yy_error (int code,bool fatal)
                     AcceptMethod m = accept_dispatch[yy_last_accept_state];
                     if (m != null)
                     {
-                        Yytoken tmp = m(); // spec.type_name
+                        Yytoken tmp = m();
                         if (tmp != null)
                             return tmp;
                     }
@@ -595,6 +594,7 @@ private void yy_error (int code,bool fatal)
                 }
             }
         }
+    }
     }
     #endregion
 
