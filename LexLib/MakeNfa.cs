@@ -8,8 +8,12 @@ internal class MakeNfa
     /*
      * Member Variables
      */
+    // Per-run state; thread-static so concurrent generations don't collide.
+    [ThreadStatic]
     private static Spec spec;
+    [ThreadStatic]
     private static Gen gen;
+    [ThreadStatic]
     private static Input input;
 
     /*

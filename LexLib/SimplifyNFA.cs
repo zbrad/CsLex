@@ -8,8 +8,12 @@ namespace LexLib;
  */
 class SimplifyNfa
 {
+    // Per-run state; thread-static so concurrent generations don't collide.
+    [ThreadStatic]
     static private int[] ccls;      // character class mapping.
+    [ThreadStatic]
     static private int original_charset_size; // original charset size
+    [ThreadStatic]
     static private int mapped_charset_size; // reduced charset size
 
     static internal void simplify(Spec spec)
