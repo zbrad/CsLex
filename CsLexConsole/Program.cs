@@ -1,63 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LexLib;
+using System;
 using System.IO;
+using LexLib;
 
 namespace CsLexConsole
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            Gen lg;
-
             if (args.Length < 1)
             {
-                Console.WriteLine("lex <filename>");
-                return;
+                Console.WriteLine("usage: cslex <filename>");
+                return 2;
             }
 
             var filename = args[0];
             if (!File.Exists(filename))
             {
                 Console.WriteLine("Error: Unable to open input file " + filename + ".");
-                return;
+                return 1;
             }
 
-            var instream = new StreamReader(
-                            new FileStream(filename, FileMode.Open,
-                                   FileAccess.Read, FileShare.Read,
-                                   8192)
-                            );
-
             var outfile = Path.GetFileNameWithoutExtension(filename) + ".cs";
-
             Console.WriteLine("Creating output file [" + outfile + "]");
 
-            var outstream = new StreamWriter(
-                         new FileStream(outfile,
-                            FileMode.Create,
-                            FileAccess.Write,
-                            FileShare.Write, 8192)
-                         );
-
-            lg = new Gen(instream, outstream, Console.Out);
             try
             {
-                lg.generate();
+                using (var input = new StreamReader(filename))
+                using (var output = new StreamWriter(outfile))
+                {
+                    LexGenerator.Generate(input, output, Console.Out);
+                }
             }
             catch (LexSpecException e)
             {
                 Console.WriteLine(e.Message);
-                Environment.ExitCode = 1;
+                return 1;
             }
-            finally
-            {
-                outstream.Dispose();
-            }
+            return 0;
         }
     }
 }

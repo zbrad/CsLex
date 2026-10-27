@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class Bunch
+    internal class Bunch
     {
         /*
          * Member Variables

@@ -3,7 +3,7 @@ using System;
 namespace LexLib
 {
 
-public class Error
+internal class Error
 {
     /*
      * Function: impos

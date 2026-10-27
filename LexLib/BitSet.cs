@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public sealed class BitSet
+    internal sealed class BitSet
     {
         /*
          * Sorted array of bit-block offsets.

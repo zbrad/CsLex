@@ -1,6 +1,6 @@
 namespace LexLib
 {
-    public class Anchor
+    internal class Anchor
     {
         /*
          * Member Variables

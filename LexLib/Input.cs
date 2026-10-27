@@ -3,12 +3,12 @@ using System.IO;
 
 namespace LexLib
 {
-public class Input
+internal class Input
 {
 /*
  * Member Variables
  */
-private StreamReader instream; /* Lex specification file. */
+private TextReader instream; /* Lex specification file. */
 
 public bool eof_reached; /* Whether EOF has been encountered. */
 public bool pushback_line; 
@@ -28,7 +28,7 @@ const bool NOT_EOF = false;
 /*
  * Function: Input
  */
-public Input(StreamReader ihandle)
+public Input(TextReader ihandle)
   {
 #if DEBUG
   Utility.assert(ihandle != null);

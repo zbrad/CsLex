@@ -3,7 +3,7 @@ using System.Text;
 
 namespace LexLib
 {
-    public class Utility
+    internal class Utility
     {
 #if DUMMY
 /*

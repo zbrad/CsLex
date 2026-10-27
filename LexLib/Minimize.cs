@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class Minimize
+    internal class Minimize
     {
         /*
          * Member Variables

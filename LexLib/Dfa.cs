@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class Dfa
+    internal class Dfa
     {
         /*
          * Member Variables

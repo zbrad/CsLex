@@ -5,13 +5,13 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class Gen
+    internal class Gen
     {
         /*
          * Member Variables
          */
-        private StreamReader instream;  /* Lex specification file. */
-        private StreamWriter outstream; /* Lexical analyzer source file. */
+        private TextReader instream;  /* Lex specification file. */
+        private TextWriter outstream; /* Lexical analyzer source file. */
 
         private Input ibuf;     /* Input buffer class. */
 
@@ -58,13 +58,13 @@ namespace LexLib
         public const int OR = 16;
         public const int PLUS_CLOSE = 17;
 
-        public Gen(StreamReader sr, StreamWriter sw)
+        public Gen(TextReader sr, TextWriter sw)
             : this(sr, sw, null)
         {
         }
 
         /* log receives progress and debug output; null discards it. */
-        public Gen(StreamReader sr, StreamWriter sw, TextWriter log)
+        public Gen(TextReader sr, TextWriter sw, TextWriter log)
         {
             this.instream = sr;
             this.outstream = sw;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class CharSet
+    internal class CharSet
     {
         /*
          * Member Variables

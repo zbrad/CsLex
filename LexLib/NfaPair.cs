@@ -1,6 +1,6 @@
 namespace LexLib
 {
-    public class NfaPair
+    internal class NfaPair
     {
         public Nfa start;
         public Nfa end;

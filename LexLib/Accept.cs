@@ -3,7 +3,7 @@ using System;
 namespace LexLib
 {
 
-public class Accept
+internal class Accept
 {
     /*
      * Member Variables

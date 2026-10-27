@@ -26,15 +26,7 @@ namespace LexTests
             Path.Combine(AppContext.BaseDirectory, "LexFiles", name);
 
         /// <summary>Run the generator on spec text; returns emitted C# source.</summary>
-        public static string Generate(string specText)
-        {
-            var input = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(specText)));
-            var mem = new MemoryStream();
-            var output = new StreamWriter(mem, new UTF8Encoding(false));
-            new Gen(input, output).generate();
-            output.Flush();
-            return Encoding.UTF8.GetString(mem.ToArray());
-        }
+        public static string Generate(string specText) => LexGenerator.Generate(specText);
 
         /// <summary>Compile generated source into an in-memory assembly.</summary>
         public static Assembly Compile(string source)

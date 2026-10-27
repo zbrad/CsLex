@@ -33,7 +33,8 @@ namespace LexTests
                 Environment.CurrentDirectory = dir;
                 Console.SetOut(TextWriter.Null);
                 var entry = Assembly.Load("cslex").EntryPoint;
-                entry.Invoke(null, new object[] { new[] { spec } });
+                var exit = (int)entry.Invoke(null, new object[] { new[] { spec } });
+                Assert.Equal(0, exit);
             }
             finally
             {

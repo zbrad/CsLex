@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class Nfa : IComparable<Nfa>
+    internal class Nfa : IComparable<Nfa>
     {
         /*
          * Member Variables

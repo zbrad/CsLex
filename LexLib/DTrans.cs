@@ -1,6 +1,6 @@
 namespace LexLib
 {
-    public class DTrans
+    internal class DTrans
     {
         /*
          * Member Variables

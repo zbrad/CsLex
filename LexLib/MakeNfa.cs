@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class MakeNfa
+    internal class MakeNfa
     {
         /*
          * Member Variables

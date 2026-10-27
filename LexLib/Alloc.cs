@@ -3,7 +3,7 @@ namespace LexLib
     /*
      * Class: Alloc
      */
-    public class Alloc
+    internal class Alloc
     {
         public static Dfa NewDfa(Spec spec)
         {

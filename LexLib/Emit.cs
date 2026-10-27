@@ -8,13 +8,13 @@ namespace LexLib
     using System.IO;
     using System.Collections;
 
-    public class Emit
+    internal class Emit
     {
         /*
          * Member Variables
          */
         private Spec spec;
-        private StreamWriter outstream;
+        private TextWriter outstream;
 
         /*
          * Constants: Anchor Types
@@ -52,7 +52,7 @@ namespace LexLib
          * Function: set
          * Description: Initializes member variables.
          */
-        private void set(Spec s, StreamWriter o)
+        private void set(Spec s, TextWriter o)
         {
 #if DEBUG
             Utility.assert(null != s);
@@ -141,7 +141,7 @@ namespace LexLib
          * Function: Write
          * Description: High-level access function to module.
          */
-        public void Write(Spec spec, StreamWriter o)
+        public void Write(Spec spec, TextWriter o)
         {
             set(spec, o);
 

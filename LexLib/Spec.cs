@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace LexLib
 {
-    public class Spec
+    internal class Spec
     {
         /*
          * Member Variables
