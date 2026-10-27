@@ -103,6 +103,22 @@ confirmed some findings and turned up more. Each fix below has a test in
   `Utility`) over the 1999 algorithm code. A from-scratch reimplementation is
   planned, so it wasn't worth the churn.
 
+### Status after phase 3
+
+- The lookahead is an `int`, and BOL/EOF are negative sentinels with their
+  own columns. Input outside the alphabet is unmatched input (a clean
+  `Unmatched Input` error), not an `IndexOutOfRangeException`, and U+0080/U+0081
+  are no longer read as BOL/EOF.
+- `%unicode` gives a 65,536-character alphabet of UTF-16 code units. Surrogate
+  pairs are matched as two characters; code-point classes are out of scope.
+  `%full` is exactly 256 characters.
+- `yy_cmap` is emitted run-length encoded. The sample spec under `%unicode`
+  generates in about 0.14 s, producing 24 KB of source.
+- `\uXXXX` escapes work outside quotes, as the manual documents.
+- `%ignorecase` folds case culture-invariantly.
+- `LexTests/UnicodeTests.cs` covers each mode. The 7-bit token goldens (the 1999
+  reference) are unchanged.
+
 **Token reference.** `LexTests/Golden/*.tokens.txt` are the output of lexers
 built by the *original* 1999 generator (tag `original-1999`) and run on
 `test.txt`. `tools/original-reference/reproduce.sh` regenerates them.
