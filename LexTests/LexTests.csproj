@@ -17,5 +17,6 @@
     <ProjectReference Include="..\LexLib\LexLib.csproj" />
     <ProjectReference Include="..\CsLexConsole\CsLexConsole.csproj" />
     <ProjectReference Include="..\CsLexLibTest\CsLexLibTest.csproj" />
+    <ProjectReference Include="..\CsLex.SourceGenerator\CsLex.SourceGenerator.csproj" Aliases="sourcegen" />
   </ItemGroup>
 </Project>

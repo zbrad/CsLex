@@ -8,7 +8,12 @@ namespace LexLib;
 /// Thrown when a lex specification cannot be processed. Replaces the
 /// original behaviour of printing the error and exiting the process.
 /// </summary>
-public class LexSpecException : Exception
+#if CSLEX_EMBEDDED
+internal
+#else
+public
+#endif
+class LexSpecException : Exception
 {
     /// <summary>One of the Error.E_* codes, or -1 when there is none.</summary>
     public int ErrorCode { get; }

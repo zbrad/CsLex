@@ -10,7 +10,12 @@ namespace LexLib;
 /// <summary>
 /// Public entry point: turns a lex specification into C# lexer source.
 /// </summary>
-public static class LexGenerator
+#if CSLEX_EMBEDDED
+internal
+#else
+public
+#endif
+static class LexGenerator
 {
     /// <summary>
     /// Read a specification from <paramref name="spec"/> and write the

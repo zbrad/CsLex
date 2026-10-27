@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="CsLex.SourceGenerator/CsLex.SourceGenerator.csproj" />
   <Project Path="CsLexConsole/CsLexConsole.csproj" />
   <Project Path="CsLexLib/CsLexLib.csproj" />
   <Project Path="CsLexLibTest/CsLexLibTest.csproj" />
