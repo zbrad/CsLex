@@ -33,8 +33,6 @@ namespace LexLib
          */
         public void add(int i)
         {
-            if (i == 0)
-                Console.WriteLine("i = 0");
             set.Set(i, true);
         }
 
