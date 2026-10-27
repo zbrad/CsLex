@@ -62,9 +62,10 @@ Ordered by impact. Each one gets a reproducing test before its fix.
    - `GetHashCode` computes `bits[i] * offs[i]`, so block 0 (bits 0–63) never
      affects the hash. In a spec with fewer than 64 NFA states, every
      `dfa_sets` key hashes the same, and the dictionary degrades to a linear
-     scan. This is a performance problem, not a correctness one. `CompareTo` orders by `inuse` before
-   content, which disagrees with `Equals`. That doesn't matter while BitSet is
-   only a dictionary key, but it is wrong.
+     scan. This is a performance problem, not a correctness one.
+   - `CompareTo` orders by `inuse` before content, which disagrees with
+     `Equals`. That doesn't matter while BitSet is only a dictionary key, but
+     it is wrong.
 5. **Stray debug output:** `CharSet.add` prints `"i = 0"`.
 6. **`Utility.assert` calls are wrapped in `#if DEBUG`** (the method itself
    isn't), so Debug and Release builds behave differently on invalid input.
@@ -99,6 +100,9 @@ confirmed some findings and turned up more. Each fix below has a test in
 - Nullable is on for the CLI, the runtime, and the public API files. File-scoped
   namespaces and `dotnet format` are applied (listed in
   `.git-blame-ignore-revs`).
+- Deviation from section 3: errors are reported only as `LexSpecException`,
+  which stops at the first error. The recommended `LexDiagnostic` list, which
+  would collect several errors, was not built.
 - Not done: the broad C# idiom pass (switch expressions, BCL replacements for
   `Utility`) over the 1999 algorithm code. A from-scratch reimplementation is
   planned, so it wasn't worth the churn.

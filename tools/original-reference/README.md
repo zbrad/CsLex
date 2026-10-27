@@ -14,7 +14,8 @@ To check or regenerate them:
 Recorded with .NET SDK 10.0.403 on linux-x64 with
 `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` (the host had no ICU). The sample
 specs use no case-insensitive matching, so the result shouldn't depend on ICU.
-That is expected, not tested.
+CI confirms this: the Linux job runs this script with ICU (run 40478730386,
+2026-10-27), and both specs match.
 
 `CSLEX_UPDATE_GOLDEN=1` in the test suite deliberately does not touch these
 files.

@@ -8,7 +8,7 @@ namespace LexTests;
 
 /// <summary>
 /// Reproductions of the bugs listed in docs/MODERNIZATION.md section 2.
-/// Each is skipped until the commit that fixes it turns it on.
+/// Each was skipped until the commit that fixed it; all are fixed now.
 /// </summary>
 public class KnownBugTests
 {
